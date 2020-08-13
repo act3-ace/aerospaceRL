@@ -5,18 +5,18 @@
 
 A template for creating RTA filters, passes desired input through unaltered
 
-The main loop will call the ASIF's "main" class and expect
+The main loop will call the RTA's "main" class and expect
 a control signal of appropriate size and type to be returned
 
 In order for this script to work correctly with the main script, avoid
-changing the name of the "ASIF" class, or the inputs and outputs of
+changing the name of the "RTA" class, or the inputs and outputs of
 the "main" function.
 
 """
 
 import numpy as np
 
-class ASIF():
+class RTA():
 	def __init__(self, env):
 		self.mass_chaser = env.mass_deputy
 		self.mean_motion = env.n

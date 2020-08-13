@@ -1,5 +1,5 @@
 '''
-View or Plot using saved neural networks. Call functions at bottom of script.
+View or Plot using saved neural networks. Include args '--Render' or '--Plot' to render/plot
 
 Created by: Kyle Dunlap
 Mentor: Kerianne Hobbs
@@ -15,20 +15,31 @@ import glob
 from torch.distributions.categorical import Categorical
 import matplotlib.pyplot as plt
 import time
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'spinup_utils'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'RunTimeAssurance'))
 
 # Loads specified neural network data
 def model(env_name, hidden_sizes, latest, algo, Path):
+
+	"""
+	env_name: Environment name
+	hidden_sizes: Hidden layers/nodes for neural network
+	latest: Load latest model if true
+	algo: algorithm used for training model
+	Path: path to custom model
+	"""
+
 	env = gym.make(env_name)
 
 	if latest == True:
-		# Assumes aerospacerl is in your home directory
-		PATH = os.path.expanduser("~") + "/aerospacerl/RL/models/sc"
-		if not os.path.isdir(PATH):
-			print('PATH ISSUE - UPDATE YOUR PATH')
-			exit()
+		if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
+			PATH2 = sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models/sc'))
+		elif env_name == 'dubins-aircraft-v0' or env_name == 'dubins-aircraft-continuous-v0':
+			PATH2 = sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models/ac'))
 
 		# Uses latest model
-		models = glob.glob(f"{PATH}/*")
+		models = glob.glob(f"{PATH2}/*")
 		latest_model = max(models, key=os.path.getctime)
 
 	else:
@@ -55,7 +66,7 @@ def model(env_name, hidden_sizes, latest, algo, Path):
 		net = logits_net
 
 	elif algo == 'PPO':
-		import spinup_utils.core as core
+		import core
 
 		# Define Neural Network
 		ac_kwargs = dict(hidden_sizes=hidden_sizes)
@@ -67,7 +78,20 @@ def model(env_name, hidden_sizes, latest, algo, Path):
 	return net
 
 # Used to render episodes
-def view(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, latest=True, algo='VPG', RTA=False, Asif='Velocity', Path=None, render_every=2, custom_settings=None):
+def view(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], episodes=10, latest=False, algo='PPO', RTA_type='off', Path=None, render_every=2, custom_settings=None):
+
+	"""
+	env_name: Environment name
+	hidden_sizes: Hidden layers/nodes for neural network
+	episodes: Number of episodes to render
+	latest: Load latest model if true
+	algo: algorithm used for training model
+	RTA_type: type of RTA to use
+	Path: path to custom model
+	render_every: render every _ steps
+	custom_settings: For GUI
+	"""
+
 	# Load neural network
 	net = model(env_name, hidden_sizes, latest, algo, Path)
 
@@ -101,26 +125,26 @@ def view(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, la
 				act = net.pi.mu_net(torch.as_tensor(obs, dtype=torch.float32)).numpy()
 			return act
 
-		# Set ASIF
-		if Asif == 'CBF' and RTA:
-			from asif.CBF_for_speed_limit import ASIF
-		elif Asif == 'Velocity' and RTA:
-			from asif.Simple_velocity_limit import ASIF
-		elif Asif == 'IASIF':
-			from asif.IASIF import ASIF
-		elif Asif == 'ISimplex':
-			from asif.ISimplex import ASIF
+		# Set RTA
+		if RTA_type == 'CBF':
+			from CBF_for_speed_limit import RTA
+		elif RTA_type == 'Velocity':
+			from Simple_velocity_limit import RTA
+		elif RTA_type == 'IASIF':
+			from IASIF import RTA
+		elif RTA_type == 'ISimplex':
+			from ISimplex import RTA
 
-		# Initialize RTA variables if True
-		if RTA:
-			asif = ASIF(env)
-			env.RTA_reward = Asif
+		# Initialize RTA variables if on
+		if RTA_type != 'off':
+			rta = RTA(env)
+			env.RTA_reward = RTA_type
 
-			def asif_act(obs, act):
+			def RTA_act(obs, act):
 				act = np.clip(act, -env.force_magnitude, env.force_magnitude)
 				x0 = [obs[0], obs[1], 0, obs[2], obs[3], 0]
 				u_des = np.array([[act[0]], [act[1]], [0]])
-				u = asif.main(x0, u_des)
+				u = rta.main(x0, u_des)
 				new_act = [u[0,0], u[1,0]]
 				if abs(np.sqrt(new_act[0]**2+new_act[1]**2) - np.sqrt(act[0]**2+act[1]**2)) < 0.0001:
 					env.RTA_on = False
@@ -140,9 +164,9 @@ def view(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, la
 		# Run episode
 		while not done:
 			act = get_best_action(obs)
-			if RTA and algo == 'PPO':
-				act = asif_act(obs, act)
-			elif RTA and algo == 'VPG':
+			if RTA_type != 'off' and algo == 'PPO':
+				act = RTA_act(obs, act)
+			elif RTA_type != 'off' and algo == 'VPG':
 				act = env.RTA(act)
 				if not isinstance(act, int) and not np.issubdtype(type(act), np.integer):
 					act_prob = []
@@ -169,7 +193,22 @@ def view(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, la
 	env.close()
 
 # Used for plotting
-def plot(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, latest=True, algo='VPG', RTA=False, Asif='Velocity', Path=None, position=True, velocity=True, force=True, vel_pos=True):
+def plot(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], episodes=10, latest=False, algo='PPO', RTA_type='off', Path=None, position=True, velocity=True, force=True, vel_pos=True):
+
+	"""
+	env_name: Environment name
+	hidden_sizes: Hidden layers/nodes for neural network
+	episodes: Number of episodes to render
+	latest: Load latest model if true
+	algo: algorithm used for training model
+	RTA_type: type of RTA to use
+	Path: path to custom model
+	position: plots trajectory if true
+	velocity: plots velocity vs. time if true
+	force: plots control input vs. time if true
+	vel_pos: plots velocity vs. position if true
+	"""
+
 	# Load neural network data
 	net = model(env_name, hidden_sizes, latest, algo, Path)
 
@@ -187,34 +226,32 @@ def plot(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, la
 				act = net.pi.mu_net(torch.as_tensor(obs, dtype=torch.float32)).numpy()
 			return act
 
-		# Set ASIF
-		if Asif == 'CBF':
-			from asif.CBF_for_speed_limit import ASIF
-		elif Asif == 'Velocity':
-			from asif.Simple_velocity_limit import ASIF
-		elif Asif == 'IASIF':
-			from asif.IASIF import ASIF
-		elif Asif == 'ISimplex':
-			from asif.ISimplex import ASIF
+		# Set RTA
+		if RTA_type == 'CBF':
+			from CBF_for_speed_limit import RTA
+		elif RTA_type == 'Velocity':
+			from Simple_velocity_limit import RTA
+		elif RTA_type == 'IASIF':
+			from IASIF import RTA
+		elif RTA_type == 'ISimplex':
+			from ISimplex import RTA
 
-		asif = ASIF(env)
+		# Initialize RTA variables if on
+		if RTA_type != 'off':
+			rta = RTA(env)
+			env.RTA_reward = RTA_type
 
-		# Set reward function
-		if RTA:
-			env.RTA_reward = Asif
-
-		# Define best action
-		def asif_act(obs, act):
-			act = np.clip(act, -env.force_magnitude, env.force_magnitude)
-			x0 = [obs[0], obs[1], 0, obs[2], obs[3], 0]
-			u_des = np.array([[act[0]], [act[1]], [0]])
-			u = asif.main(x0, u_des)
-			new_act = [u[0,0], u[1,0]]
-			if abs(np.sqrt(new_act[0]**2+new_act[1]**2) - np.sqrt(act[0]**2+act[1]**2)) < 0.0001:
-				env.RTA_on = False
-			else:
-				env.RTA_on = True
-			return new_act
+			def RTA_act(obs, act):
+				act = np.clip(act, -env.force_magnitude, env.force_magnitude)
+				x0 = [obs[0], obs[1], 0, obs[2], obs[3], 0]
+				u_des = np.array([[act[0]], [act[1]], [0]])
+				u = rta.main(x0, u_des)
+				new_act = [u[0,0], u[1,0]]
+				if abs(np.sqrt(new_act[0]**2+new_act[1]**2) - np.sqrt(act[0]**2+act[1]**2)) < 0.0001:
+					env.RTA_on = False
+				else:
+					env.RTA_on = True
+				return new_act
 
 	# Setup plot
 	ax = plt.gca()
@@ -233,18 +270,13 @@ def plot(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, la
 		controlx = [0]
 		controly = [0]
 		RTA_percent = 0
-		if Asif == 'CBF':
-			cbf = []
-		elif Asif == 'Velocity':
-			vH_max = []
-		elif Asif == 'IASIF' or Asif == 'ISimplex':
-			iasif = []
+		vH_max = []
 		# Run episode
 		while not done:
 			act = get_best_action(obs)
-			if RTA and algo == 'PPO':
-				act = asif_act(obs, act)
-			elif RTA and algo == 'VPG':
+			if RTA_type != 'off' and algo == 'PPO':
+				act = RTA_act(obs, act)
+			elif RTA_type != 'off' and algo == 'VPG':
 				act = env.RTA(act)
 				if not isinstance(act, int) and not np.issubdtype(type(act), np.integer):
 					act_prob = []
@@ -264,12 +296,7 @@ def plot(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, la
 			controly.append(controly[len(controly)-1]+env.y_force)
 			vH.append(env.vH)
 			rh.append(env.rH)
-			if Asif == 'CBF':
-				cbf.append(asif.K1_s * env.rH + asif.K2_s)
-			elif Asif == 'Velocity':
-				vH_max.append(env.vH_max)
-			elif Asif == 'IASIF' or Asif == 'ISimplex':
-				iasif.append(asif.K1_s * env.rH + asif.K2_s)
+			vH_max.append(env.vH_max)
 			if env.RTA_on:
 				RTA_percent += 1
 				# plt.figure(2)
@@ -289,12 +316,7 @@ def plot(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, la
 		if velocity:
 			plt.figure(2)
 			plt.plot(range(len(vH)),vH, label=f"Velocity, Episode {episode+1}", color=color, linestyle='-')
-			if Asif == 'CBF':
-				plt.plot(range(len(cbf)), cbf, label='CBF Velocity Limit', color=color, linestyle='--')
-			elif Asif == 'Velocity':
-				plt.plot(range(len(vH_max)), vH_max, label=f"Max Velocity, Episode {episode+1}", color=color, linestyle='--')
-			elif Asif == 'IASIF' or Asif == 'ISimplex':
-				plt.plot(range(len(iasif)), iasif, label='IASIF Velocity Limit', color=color, linestyle='--')
+			plt.plot(range(len(vH_max)), vH_max, label=f"Max Velocity, Episode {episode+1}", color=color, linestyle='--')
 		if force:
 			plt.figure(3)
 			plt.plot(range(len(controlx)),controlx, label=f"Fx, Episode {episode+1}", color=color, linestyle='-')
@@ -344,22 +366,39 @@ def plot(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, la
 
 	plt.show()
 
-'''
-env_name: environment you want to use
-episodes: number of episodes to render
-latest: True to use latest saved model, False to use saved model (update below with your file path)
-algo: make sure this matches the algorithm you used ('VPG' or 'PPO')
-RTA: True is On, used for velocity constraint
-Asif: Which backup controller to use, either 'Velocity', 'CBF', 'IASIF', or 'ISimplex'
-Path: path to your custom file if latest is False
-render_every: Render every _ steps
-position, velocity, force, and vel_pos: Plot trajectory, velocity. vs time, force vs. time, velocity vs. position respectively if True
-'''
 
-custom_file_path = "aerospacerl/RL/saved_models/Velocity1.dat"
+if __name__ == '__main__':
+	import argparse
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--Render', default=False, action='store_true') # Add arg '--Render' ro render episodes
+	parser.add_argument('--Plot', default=False, action='store_true') # Add arg '--Plot' to plot episodes
+	parser.add_argument('--env_name', type=str, default='spacecraft-docking-continuous-v0') # Environment Name
+	parser.add_argument('--algo', type=str, default='PPO') # Algorithm used in training
+	parser.add_argument('--episodes', type=int, default=1) # Number of episodes to display
+	parser.add_argument('--LoadLatest', default=False, action='store_true') # Load NN - Add arg '--LoadLatest' to load last saved model instead of custom model
+	parser.add_argument('--hid', type=int, default=64) # Number of hidden layer nodes
+	parser.add_argument('--l', type=int, default=2) # Number of hidden layers
+	parser.add_argument('--RTA', type=str, default='off') # Run Time Assurance - 4 options: 'CBF', 'Velocity', 'IASIF', or 'ISimplex'
+	parser.add_argument('--render_every', type=int, default=4) # Render every _ steps
+	parser.add_argument('--PlotTypes', nargs='+', default=['position','vel_pos','velocity','force']) # Which plots to show
+	parser.add_argument('--model', type=str, default='Velocity1') # Model from 'saved_models' folder
+	args = parser.parse_args()
 
-# view(env_name='spacecraft-docking-continuous-v0', episodes=1, latest=False, algo='PPO', RTA=True, Asif='Velocity', Path=custom_file_path, render_every=4)
-# view(env_name='spacecraft-docking-v0', episodes=3, latest=False, algo='VPG', RTA = True, Path=custom_file_path, render_every=4)
+	PATH = os.path.join(os.path.dirname(__file__), '..', 'saved_models')
+	custom_file = f"{PATH}/{args.model}.dat"
 
-plot(env_name='spacecraft-docking-continuous-v0', episodes=1, latest=False, algo='PPO', RTA=True, Asif='IASIF', Path=custom_file_path, position=True, velocity=True, force=False, vel_pos=True)
-# plot(env_name='spacecraft-docking-v0', episodes=3, latest=False, algo='VPG', RTA=True, Path=custom_file_path, position=True, velocity=True, force=True, vel_pos=True)
+	if args.Render:
+		view(env_name=args.env_name, episodes=args.episodes, latest=args.LoadLatest, algo=args.algo, RTA_type=args.RTA, Path=custom_file, render_every=args.render_every, hidden_sizes=[args.hid]*args.l)
+
+	if args.Plot:
+		for arg in args.PlotTypes:
+			if arg == 'position':
+				position = True
+			elif arg == 'velocity':
+				velocity = True
+			elif arg == 'force':
+				force = True
+			elif arg == 'vel_pos':
+				vel_pos = True
+
+		plot(env_name=args.env_name, episodes=args.episodes, latest=args.LoadLatest, algo=args.algo, RTA_type=args.RTA, Path=custom_file, hidden_sizes=[args.hid]*args.l, position=position, velocity=velocity, force=force, vel_pos=vel_pos)

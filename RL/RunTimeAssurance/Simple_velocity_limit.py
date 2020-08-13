@@ -15,7 +15,7 @@ import numpy as np
 import os, sys, inspect
 import math
 
-class ASIF():
+class RTA():
 	def __init__(self, env):
 		# Define parameters
 		self.mass_chaser = env.mass_deputy

@@ -5,11 +5,11 @@
 
 A template for creating RTA filters, passes desired input through unaltered
 
-The main loop will call the ASIF's "main" class and expect
+The main loop will call the RTA's "main" class and expect
 a control signal of appropriate size and type to be returned
 
 In order for this script to work correctly with the main script, avoid
-changing the name of the "ASIF" class, or the inputs and outputs of
+changing the name of the "RTA" class, or the inputs and outputs of
 the "main" function.
 
 """
@@ -18,7 +18,7 @@ import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
 
-class ASIF():
+class RTA():
 	def __init__(self, env):
 		self.mass_chaser = env.mass_deputy
 		self.mean_motion = env.n
@@ -30,39 +30,18 @@ class ASIF():
 
 		self.zero_input = np.zeros([3,1])
 
-		# # Flags
-		# self.f_use_heuristic = True # Apply heuristic that will speed up computation (but hasn't formally been proven to work)
-		# self.f_endpoint_constraint = False # Require that trajectory endpoint lie in invariant set
-		# self.f_soften_constraint = False # Allows violation of barrier constraint
-
-		# # Define Backup controller parameters
-		# self.T_backup = 30 # [s] length of time in backup trajectory horizon
-		# self.Nsteps = 30   # number steps in horizon of backup trajectory
-		# self.Nskip = 2     # skip points when checking discrete trajectory points in optimization
-		# self.kappa =  .6   # higher values of this make actuation stonger
-
-		# # Define ASIF parameters
-		# self.alpha_coefficient = 2 # lower values give more of a "buffer"
-
 		# Flags
-		self.f_use_heuristic = False # Apply heuristic that will speed up computation (but hasn't formally been proven to work)
-		self.f_endpoint_constraint = True # Require that trajectory endpoint lie in invariant set
-		self.f_soften_constraint = False # Allows violation of barrier constraint
+		self.f_use_heuristic = True # Apply heuristic that will speed up computation (but hasn't formally been proven to work)
 
 		# Define Backup controller parameters
-		self.T_backup = 300 # [s] length of time in backup trajectory horizon
-		self.Nsteps = 300   # number steps in horizon of backup trajectory
-		self.Nskip = 50     # skip points when checking discrete trajectory points in optimization
-		self.kappa =  .6   # higher values of this make actuation stonger
-
-		# Define ASIF parameters
-		self.alpha_coefficient = 1  # lower values give more of a "buffer"
+		self.T_backup = 50 # [s] length of time in backup trajectory horizon
+		self.Nsteps = int(self.T_backup / self.controller_sample_period)   # number steps in horizon of backup trajectory
+		self.kappa =  0.5     # higher values of this make actuation stonger
 
 		# Define safety set and backup set parameters
-		self.eta_b = 0.1 # acceptable error magnitude from NMT plane for reachability constraint
+		self.eta_b = 0.1    # acceptable error magnitude from NMT plane for reachability constraint
 		self.K1_s = 2.0*self.mean_motion # slope of safety boundary for speed limit constraint (must be >= 2n)
-		self.K2_s = .2 # 2*self.eta_b # max allowable speed at origin (must be > eta_b)
-
+		self.K2_s = 0.2 # 2*self.eta_b # max allowable speed at origin (must be > eta_b)
 
 		self.timevec = np.linspace(0, self.T_backup, self.Nsteps)
 		self.dt = self.timevec[1]-self.timevec[0]
@@ -90,8 +69,8 @@ class ASIF():
 							  [           0,           0,   0,   -2] ] )
 
 		self.phi  = np.zeros([4, self.Nsteps])
-		self.S = np.zeros([4, 4, self.Nsteps])
-		# self.initialize_Dphi()
+		self.Dphi = np.zeros([4, 4, self.Nsteps])
+		self.initialize_Dphi()
 
 	##########################################################################
 	def main(self, x0, u_des):
@@ -136,18 +115,16 @@ class ASIF():
 				 # Initialize states
 				Fx = []
 				Fy = []
-				if self.f_soften_constraint:
-					dist_out_of_bounds1 = []
-					dist_out_of_bounds2 = []
+				dist_out_of_bounds1 = []
+				dist_out_of_bounds2 = []
 
 				m = gp.Model("IASIF")
 
 				# Define variables at each of the tau timesteps
 				Fx.append( m.addVar(vtype=GRB.CONTINUOUS, lb = -self.max_available_thrust, ub = self.max_available_thrust, name="Fx" ))
 				Fy.append( m.addVar(vtype=GRB.CONTINUOUS, lb = -self.max_available_thrust, ub = self.max_available_thrust, name="Fy" ))
-				if self.f_soften_constraint:
-					dist_out_of_bounds1.append( m.addVar(vtype=GRB.CONTINUOUS, lb = 0, ub = 10000*self.max_available_thrust, name="DOB1" ))
-					dist_out_of_bounds2.append( m.addVar(vtype=GRB.CONTINUOUS, lb = 0, ub = 10000*self.max_available_thrust, name="DOB2" ))
+				dist_out_of_bounds1.append( m.addVar(vtype=GRB.CONTINUOUS, lb = 0, ub = 1000*self.max_available_thrust, name="DOB1" ))
+				dist_out_of_bounds2.append( m.addVar(vtype=GRB.CONTINUOUS, lb = 0, ub = 1000*self.max_available_thrust, name="DOB2" ))
 
 				m.update()
 
@@ -156,33 +133,30 @@ class ASIF():
 				Ax0 = np.matmul(self.A, x0.reshape(4,1))
 
 				################ Backwards reachability constraint ###################
-				if self.f_endpoint_constraint:
-					# Define coefficients
-					ghb = self.grad_hb(self.phi[:,-1])
-					d = np.matmul(ghb, np.matmul(self.S[:,:,-1], Ax0)) + self.alpha( self.h_b( self.phi[:,-1] ) )
-					c = np.matmul(ghb, np.matmul(self.S[:,:,-1], self.B ))
+				# Define coefficients
+				ghb = self.grad_hb(self.phi[:,-1])
+				d = np.matmul(ghb, np.matmul(self.Dphi[:,:,-1], Ax0)) + self.alpha( self.h_b( self.phi[:,-1] ) )
+				c = np.matmul(ghb, np.matmul(self.Dphi[:,:,-1], self.B ))
 
-					# Round to prevent those pesky Gurobi warnings
-					if np.abs(c[0])<1e-13:
-						c[0]=1e-13*np.sign(c[0])
-					if np.abs(c[1])<1e-13:
-						c[1]=1e-13*np.sign(c[0])
-					if np.abs(d[0])<1e-13:
-						d[0]=1e-13*np.sign(c[0])
+				# Round to prevent Gurobi warnings
+				if np.abs(c[0])<1e-13:
+					c[0]=1e-13*np.sign(c[0])
+				if np.abs(c[1])<1e-13:
+					c[1]=1e-13*np.sign(c[0])
+				if np.abs(d[0])<1e-13:
+					d[0]=1e-13*np.sign(c[0])
 
-					# Add constraint
-					if self.f_soften_constraint:
-						m.addConstr( c[0]*Fx[0] + c[1]*Fy[0] + dist_out_of_bounds1[0] >= -d[0]  , "BRC")
-					else:
-						m.addConstr( c[0]*Fx[0] + c[1]*Fy[0] >= -d[0]  , "BRC")
+				# Add constraint
+				m.addConstr( c[0]*Fx[0] + c[1]*Fy[0] + dist_out_of_bounds1[0] >= -d[0]  , "BRC")
+
 
 				################### Set invariance constraints #######################
-				for i in range(0,self.Nskip, self.Nsteps):
+				for i in range(0,self.Nsteps):
 					# print(i)
 					# Define coefficients
 					ghs = self.grad_hs(self.phi[:,i])
-					d = np.matmul(ghs, np.matmul(self.S[:,:,i], Ax0)) + self.alpha( self.h_s( self.phi[:,i] ) )
-					c = np.matmul(ghs, np.matmul(self.S[:,:,i], self.B ))
+					d = np.matmul(ghs, np.matmul(self.Dphi[:,:,i], Ax0)) + self.alpha( self.h_s( self.phi[:,i] ) )
+					c = np.matmul(ghs, np.matmul(self.Dphi[:,:,i], self.B ))
 
 					# Round to prevent Gurobi warnings
 					if np.abs(c[0])<1e-13:
@@ -193,17 +167,15 @@ class ASIF():
 						d[0]=1e-13*np.sign(c[0])
 
 					# Add constraint
-					if self.f_soften_constraint:
-						m.addConstr( c[0]*Fx[0] + c[1]*Fy[0] + dist_out_of_bounds2[0] >= -d[0]  , "BC"+str(i))
-					else:
-						m.addConstr( c[0]*Fx[0] + c[1]*Fy[0]  >= -d[0]  , "BC"+str(i))
+					m.addConstr( c[0]*Fx[0] + c[1]*Fy[0] + dist_out_of_bounds2[0] >= -d[0]  , "BC"+str(i))
+					# m.addConstr( c[0]*Fx[0] + c[1]*Fy[0]  >= -d[0]  , "BC"+str(i))
+
+
 
 
 				################### Solve optimization program! ######################
 				# Set Objective
-				obj = Fx[0]*Fx[0] + Fy[0]*Fy[0] - 2*Fx_des*Fx[0] - 2*Fy_des*Fy[0]
-				if self.f_soften_constraint:
-					obj = obj + 10000*dist_out_of_bounds1[0]+10000*dist_out_of_bounds2[0]
+				obj = Fx[0]*Fx[0] + Fy[0]*Fy[0] - 2*Fx_des*Fx[0] - 2*Fy_des*Fy[0] + 10000*dist_out_of_bounds1[0]+10000*dist_out_of_bounds2[0]
 
 				m.setObjective(obj, GRB.MINIMIZE)
 				m.setParam( 'OutputFlag', False )
@@ -218,7 +190,7 @@ class ASIF():
 				self.ustar[1,0] = m.getVarByName("Fy").x
 				self.ustar[2,0] = u_des[2,0] # force input in z direction equal to desired
 			except:
-				print("Optimization failed! You may be starting in an unsafe region... Reverting to backup controller")
+				# print("Optimization failed! You may be starting in an unsafe region... Reverting to backup controller")
 				ub = self.u_b(x0)
 				self.ustar = np.array([ [ub[0,0]], [ub[1,0]], [u_des[2,0]] ])
 
@@ -278,7 +250,7 @@ class ASIF():
 
 	##########################################################################
 	def alpha(self, x ):
-		return self.alpha_coefficient*x**3 # .01*x**3
+		return 100*x**3
 
 	##########################################################################
 	def xdot(self, x, u):
@@ -289,56 +261,21 @@ class ASIF():
 		# integrate backup controller to get phi, Dphi
 
 		self.phi[:,0] = x0
-		self.S[:,:,0] = np.eye(4)
+		# self.Dphi[:,:,0] = np.eye(4)
 
 		for i in range(1,self.Nsteps):
 			# Dynamics
 			self.phi[:,i] = self.phi[:,i-1] + self.xdot(self.phi[:,i-1], self.u_b(self.phi[:,i-1]))*self.dt
 
 			# # Sensitivity
-			Dphi = self.get_Jacobian( self.phi[:,i] )
-			self.S[:,:,i] = self.S[:,:,i-1] + np.matmul(Dphi, self.S[:,:,i-1])*self.dt
+			# self.Dphi[:,:,i] = self.Dphi[:,:,i-1] + np.matmul(self.A, self.Dphi[:,:,i-1])*self.dt
 
 	##########################################################################
-	def get_Jacobian(self, phi):
-		# Returns the Jacobian "D" of the closed loop dynamics: D = D_state + D_control, with D_state = A
+	def initialize_Dphi(self):
+		# integrate sensitivity matrix to get Dphi array
 
-		umax = self.max_available_thrust
+		self.Dphi[:,:,0] = np.eye(4)
 
-		# Initialize control contribution to Jacobian
-		D_control = np.zeros([4,4])
-
-		# Control terms without "tanh()" component
-		ubx = -3*self.mean_motion**2*phi[0] + 0.5*self.mean_motion*self.kappa*phi[1] - self.kappa*phi[2] - 1.5*self.mean_motion*phi[3]
-		uby = -2*self.mean_motion*self.kappa*phi[0] - self.kappa*phi[3]
-
-		# Fill in the Matrix
-		# D_control[2,0] = -3*self.mean_motion**2*(1-(np.tanh(ubx/umax))**2 )
-		# D_control[2,1] =   0.5*self.mean_motion*(1-(np.tanh(ubx/umax))**2  )
-		# D_control[2,2] =            -self.kappa*(1-(np.tanh(ubx/umax))**2  )
-		# D_control[2,3] =  -1.5*self.mean_motion*(1-(np.tanh(ubx/umax))**2  )
-
-		# D_control[3,0] = -2*self.mean_motion*self.kappa*(1-(np.tanh(uby/umax))**2  )
-		# D_control[3,3] =                    -self.kappa*(1-(np.tanh(uby/umax))**2  )
-
-		D_control[2,0] = -3*self.mean_motion**2*(1-(np.tanh(ubx/umax))**2 )
-		D_control[2,1] =   0.5*self.mean_motion*(1-(np.tanh(ubx/umax))**2 )
-		D_control[2,2] =            -self.kappa*(1-(np.tanh(ubx/umax))**2 )
-		D_control[2,3] =  -1.5*self.mean_motion*(1-(np.tanh(ubx/umax))**2 )
-
-		D_control[3,0] = -2*self.mean_motion*self.kappa*(1-(np.tanh(ubx/umax))**2 )
-		D_control[3,3] =                    -self.kappa*(1-(np.tanh(ubx/umax))**2 )
-		# print("Dcontrol = ", D_control)
-
-
-		return (self.A + D_control)
-
-
-	# def initialize_Dphi(self):
-	#     # integrate sensitivity matrix to get Dphi array
-
-	#     self.S[:,:,0] = np.eye(4)
-
-	#     for i in range(1,self.Nsteps):
-	#         # Sensitivity
-	#         self.S[:,:,i] = self.S[:,:,i-1] + np.matmul(self.A, self.S[:,:,i-1])*self.dt
+		for i in range(1,self.Nsteps):
+			# Sensitivity
+			self.Dphi[:,:,i] = self.Dphi[:,:,i-1] + np.matmul(self.A, self.Dphi[:,:,i-1])*self.dt

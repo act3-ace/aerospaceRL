@@ -11,29 +11,25 @@ import torch
 from torch.optim import Adam
 import gym
 import time
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), 'spinup_utils'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'RunTimeAssurance'))
 import core
 from logx import EpochLogger
 from mpi_pytorch import setup_pytorch_for_mpi, sync_params, mpi_avg_grads
 from mpi_tools import mpi_fork, mpi_avg, proc_id, mpi_statistics_scalar, num_procs
-import dubins_gym
+import aero_gym
 from datetime import datetime
-import os
 from torch.utils.tensorboard import SummaryWriter
 import math
-import matplotlib.pyplot as plt
 import glob
-import sys
-
-sys.path.append(os.path.join(os.path.dirname(__file__), 'asif')) # Add file path to asif
 
 # Used to track actual duration of experiment
 starttime = time.time()
 current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-# Assumes spacecraftdockingrl is in your home directory
-PATH = os.path.expanduser("~") + "/spacecraftdockingrl/RL_algorithms"
-if not os.path.isdir(PATH):
-	print('PATH ISSUE - UPDATE YOUR PATH')
-	exit()
+# Current file path
+PATH = os.path.dirname(__file__)
 
 class PPOBuffer:
 	"""
@@ -115,7 +111,7 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 		steps_per_epoch=4000, epochs=50, gamma=0.99, clip_ratio=0.2, pi_lr=3e-4,
 		vf_lr=1e-3, train_pi_iters=80, train_v_iters=80, lam=0.97, max_ep_len=None,
 		target_kl=0.01, logger_kwargs=dict(), save_freq=10, TensorBoard=True, save_nn=True,
-		save_every=1000, load_latest=False, load_custom=False, LoadPath=None, plot=True, RTA=None):
+		save_every=1000, load_latest=False, load_custom=False, LoadPath=None, RTA_type=None):
 	"""
 	Proximal Policy Optimization (by clipping),
 
@@ -229,9 +225,7 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 
 		LoadPath (str): Path for custom neural network data file
 
-		plot (bool): Plots trajectories and velocity if True, no plot if False
-
-		RTA (str): RTA framework, either 'CBF', 'Velocity', 'IASIF', or
+		RTA_type (str): RTA framework, either 'CBF', 'Velocity', 'IASIF', or
 			'ISimplex'
 
 	"""
@@ -257,7 +251,10 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 
 	# Load model if True
 	if load_latest:
-		models = glob.glob(f"{PATH}/models/sc/*")
+		if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
+			models = glob.glob(f"{PATH}/models/sc/*")
+		elif env_name == 'dubins-aircraft-v0' or env_name == 'dubins-aircraft-continuous-v0':
+			models = glob.glob(f"{PATH}/models/ac/*")
 		LoadPath = max(models, key=os.path.getctime)
 		ac.load_state_dict(torch.load(LoadPath))
 	elif load_custom:
@@ -341,38 +338,27 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 					 DeltaLossPi=(loss_pi.item() - pi_l_old),
 					 DeltaLossV=(loss_v.item() - v_l_old))
 
-	# Use best possible action for plots
-	def get_best_action(obs):
-		with torch.no_grad():
-			act = ac.pi.mu_net(obs).numpy()
-		return act
-
 	# Import ASIF
-	asif_on = False
-	if RTA == 'CBF':
-		from CBF_for_speed_limit import ASIF
-		asif_on = True
-	elif RTA == 'Velocity':
-		from Simple_velocity_limit import ASIF
-		asif_on = True
-	elif RTA == 'IASIF':
-		from IASIF import ASIF
-		asif_on = True
-	elif RTA == 'ISimplex':
-		from ISimplex import ASIF
-		asif_on = True
+	if RTA_type == 'CBF':
+		from CBF_for_speed_limit import RTA
+	elif RTA_type == 'Velocity':
+		from Simple_velocity_limit import RTA
+	elif RTA_type == 'IASIF':
+		from IASIF import RTA
+	elif RTA_type == 'ISimplex':
+		from ISimplex import RTA
 
 	# Call ASIF, define action conversion
-	if asif_on:
-		env.RTA_reward = RTA
+	if RTA_type != 'off':
+		env.RTA_reward = RTA_type
 
-		asif = ASIF(env)
+		rta = RTA(env)
 
-		def asif_act(obs, act):
+		def RTA_act(obs, act):
 			act = np.clip(act, -env.force_magnitude, env.force_magnitude)
 			x0 = [obs[0], obs[1], 0, obs[2], obs[3], 0]
 			u_des = np.array([[act[0]], [act[1]], [0]])
-			u = asif.main(x0, u_des)
+			u = rta.main(x0, u_des)
 			new_act = [u[0,0], u[1,0]]
 			if abs(np.sqrt(new_act[0]**2+new_act[1]**2) - np.sqrt(act[0]**2+act[1]**2)) < 0.0001:
 				env.RTA_on = False
@@ -388,12 +374,11 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 
 	# Create TensorBoard file if True
 	if TensorBoard and proc_id() == 0:
-		Name = f"{PATH}/runs/sc/Spacecraft-docking-" + current_time
+		if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
+			Name = f"{PATH}/runs/sc/Spacecraft-docking-" + current_time
+		elif env_name == 'dubins-aircraft-v0' or env_name == 'dubins-aircraft-continuous-v0':
+			Name = f"{PATH}/runs/ac/Dubins-aircraft-" + current_time
 		writer = SummaryWriter(Name)
-
-	# Set up plot if true
-	if plot and proc_id() == 0:
-		fig, (ax1,ax2) = plt.subplots(1,2)
 
 	# Main loop: collect experience in env and update/log each epoch
 	for epoch in range(epochs):
@@ -408,16 +393,17 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 		delta_v = [] # Track episode total delta v
 		for t in range(local_steps_per_epoch):
 			a, v, logp = ac.step(torch.as_tensor(o, dtype=torch.float32))
-			if asif_on: # If RTA is on, get RTA action
-				RTA_a = asif_act(o, a)
+			if RTA_type != 'off': # If RTA is on, get RTA action
+				RTA_a = RTA_act(o, a)
 				if env.RTA_on:
 					RTA_percent += 1
 				next_o, r, d, _ = env.step(RTA_a)
 			else: # If RTA is off, pass through desired action
 				next_o, r, d, _ = env.step(a)
-				over_max_vel, _, _ = env.check_velocity(a[0], a[1])
-				if over_max_vel:
-					RTA_percent += 1
+				if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
+					over_max_vel, _, _ = env.check_velocity(a[0], a[1])
+					if over_max_vel:
+						RTA_percent += 1
 			ep_ret += r
 			ep_len += 1
 
@@ -447,7 +433,8 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 					batch_ret.append(ep_ret)
 					batch_len.append(ep_len)
 					episodes += 1
-					delta_v.append(env.control_input/env.mass_deputy)
+					if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
+						delta_v.append(env.control_input/env.mass_deputy)
 				batch_RTA_percent.append(RTA_percent/ep_len*100)
 				RTA_percent = 0
 				o, ep_ret, ep_len = env.reset(), 0, 0
@@ -497,58 +484,11 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 		avg_failure_rate = mpi_avg(failure_rate)
 		avg_crash_rate = mpi_avg(crash_rate)
 		avg_overtime_rate = mpi_avg(overtime_rate)
-		avg_delta_v = mpi_avg(np.mean(delta_v))
-		avg_RTA_percent = mpi_avg(np.mean(batch_RTA_percent))
+		if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
+			avg_delta_v = mpi_avg(np.mean(delta_v))
+			avg_RTA_percent = mpi_avg(np.mean(batch_RTA_percent))
 
 		if proc_id() == 0: # Only on one cpu
-			# Plot 5 epochs over entire range, run new episode using best case actions
-			if plot and (epoch == epochs - 1 or (epoch % math.ceil(epochs/5) == 0 and epoch != 0)):
-				x = [] # Track x trajectory
-				y = [] # Track y trajectory
-				if epoch == epochs - 1:
-					vH = [] # Track velocity
-					if RTA == 'CBF':
-						cbf = [] # Track max velocity
-					elif RTA == 'IASIF' or RTA == 'ISimplex':
-						iasif = [] # Track max velocity
-					else:
-						vH_max = [] # Track max velocity
-				# Reset variables
-				o = env.reset()
-				d = False
-				while not d:
-					a = get_best_action(torch.as_tensor(o, dtype=torch.float32))
-					if asif_on:
-						a = asif_act(o, a)
-					o, _, d, _ = env.step(a)
-					x.append(o[0])
-					y.append(o[1])
-					if epoch == epochs - 1:
-						vH.append(env.vH)
-						if RTA == 'CBF':
-							cbf.append(np.sqrt(asif.K * env.rH ** 2))
-						elif RTA == 'IASIF' or RTA == 'ISimplex':
-							iasif.append(asif.K1_s * env.rH + asif.K2_s)
-						else:
-							vH_max.append(env.vH_max)
-
-				if epoch == epochs - 1:
-					# Plot solid line for last epoch
-					ax1.plot(x,y, label=epoch, linestyle='-')
-					# Plot velocity
-					ax2.plot(range(len(vH)),vH, label='Velocity')
-					if RTA == 'CBF':
-						ax2.plot(range(len(cbf)), cbf, 'r', label='CBF Max Velocity')
-					elif RTA == 'IASIF':
-						ax2.plot(range(len(iasif)), iasif, 'r', label='IASIF Max Velocity')
-					elif RTA == 'ISimplex':
-						ax2.plot(range(len(iasif)), iasif, 'r', label='ISimplex Max Velocity')
-					else:
-						ax2.plot(range(len(vH_max)),vH_max, 'r', label='Max Velocity')
-				else:
-					# Dashed lines for all other epochs
-					ax1.plot(x,y, label=epoch, linestyle='--')
-
 			# Plot to TensorBoard if True, only on one cpu
 			if TensorBoard:
 				writer.add_scalar('Return', avg_batch_ret, epoch)
@@ -557,8 +497,9 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 				writer.add_scalar('Failure-Rate', avg_failure_rate*100, epoch)
 				writer.add_scalar('Crash-Rate', avg_crash_rate*100, epoch)
 				writer.add_scalar('Overtime-Rate', avg_overtime_rate*100, epoch)
-				writer.add_scalar('Delta-V', avg_delta_v, epoch)
-				writer.add_scalar('RTA-on-percent', avg_RTA_percent, epoch)
+				if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
+					writer.add_scalar('Delta-V', avg_delta_v, epoch)
+					writer.add_scalar('RTA-on-percent', avg_RTA_percent, epoch)
 
 			# Save neural network if true, can change to desired location
 			if save_nn and epoch % save_every == 0 and epoch != 0:
@@ -566,7 +507,12 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 					os.mkdir(f"{PATH}/models")
 				if not os.path.isdir(f"{PATH}/models/sc"):
 					os.mkdir(f"{PATH}/models/sc")
-				Name2 = f"{PATH}/models/sc/Spacecraft-docking-" + current_time + f"-epoch{epoch}.dat"
+				if not os.path.isdir(f"{PATH}/models/ac"):
+					os.mkdir(f"{PATH}/models/ac")
+				if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
+					Name2 = f"{PATH}/models/sc/Spacecraft-docking-" + current_time + f"-epoch{epoch}.dat"
+				elif env_name == 'dubins-aircraft-v0' or env_name == 'dubins-aircraft-continuous-v0':
+					Name2 = f"{PATH}/models/ac/Dubins-aircraft-" + current_time + f"-epoch{epoch}.dat"
 				torch.save(ac.state_dict(), Name2)
 
 	# Average episodes per hour, episode per epoch
@@ -575,32 +521,18 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 
 	# Plot on one cpu
 	if proc_id() == 0:
-		if plot:
-			# Plot chief
-			ax1.plot(0,0,'kx',markersize=8)
-			# Plot boundaries
-			ax1.vlines(env.x_threshold,-env.y_threshold,env.y_threshold,colors='r')
-			ax1.vlines(-env.x_threshold,-env.y_threshold,env.y_threshold,colors='r')
-			ax1.hlines(-env.y_threshold,-env.x_threshold,env.x_threshold,colors='r')
-			ax1.hlines(env.y_threshold,-env.x_threshold,env.x_threshold,colors='r')
-			ax1.set_xlabel('X [m]')
-			ax1.set_ylabel('Y [m]')
-			ax1.grid(True)
-			ax1.legend()
-			ax1.set_title('Trajectories')
-			ax2.set_xlabel('Time Steps')
-			ax2.set_ylabel('Velocity (m/s)')
-			ax2.grid(True)
-			ax2.legend()
-			ax2.set_title('Velocity Over Time for Last Episode')
-
 		# Save neural network
 		if save_nn:
 			if not os.path.isdir(f"{PATH}/models"):
 				os.mkdir(f"{PATH}/models")
 			if not os.path.isdir(f"{PATH}/models/sc"):
 				os.mkdir(f"{PATH}/models/sc")
-			Name2 = f"{PATH}/models/sc/Spacecraft-docking-" + current_time + "-final.dat"
+			if not os.path.isdir(f"{PATH}/models/ac"):
+				os.mkdir(f"{PATH}/models/ac")
+			if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
+				Name2 = f"{PATH}/models/sc/Spacecraft-docking-" + current_time + "-final.dat"
+			elif env_name == 'dubins-aircraft-v0' or env_name == 'dubins-aircraft-continuous-v0':
+				Name2 = f"{PATH}/models/ac/Dubins-aircraft-" + current_time + "-final.dat"
 			torch.save(ac.state_dict(), Name2)
 
 		# Print statistics on episodes
@@ -622,8 +554,8 @@ if __name__ == '__main__':
 	parser.add_argument('--NoSave', default=True, action='store_false') # Save NN - Add arg '--NoSave' if you don't want to save NN
 	parser.add_argument('--SaveEvery', type=int, default=500) # Save NN every _ epochs
 	parser.add_argument('--LoadLatest', default=False, action='store_true') # Load NN - Add arg '--LoadLatest' to load last saved model
-	parser.add_argument('--LoadCustom', default=False, action='store_true') # Load NN - Add arg '--LoadCustom' to load previous model (update path below)
-	parser.add_argument('--NoPlot', default=True, action='store_false') # Plot - Add arg '--NoPlot' if you don't want to plot results
+	parser.add_argument('--LoadCustom', default=False, action='store_true') # Load NN - Add arg '--LoadCustom' to load previous model (update path using --custom_model)
+	parser.add_argument('--custom_model', type=str, default='Velocity1') # Custom NN model, from 'saved_models' folder
 	parser.add_argument('--RTA', type=str, default='off') # Run Time Assurance - 4 options: 'CBF', 'Velocity', 'IASIF', or 'ISimplex'
 	args = parser.parse_args()
 
@@ -633,24 +565,19 @@ if __name__ == '__main__':
 	logger_kwargs = setup_logger_kwargs(args.exp_name, args.seed)
 
 	# For Custom Load Path:
-	LoadPath = "spacecraftdockingrl/RL_algorithms/saved_models/PPObaseline2.dat"
+	LoadPath = f"{os.path.join(os.path.dirname(__file__))}/saved_models/{args.custom_model}.dat"
 
 	env_name = args.env
-	ppo(lambda : gym.make(env_name), actor_critic=core.MLPActorCritic,
+	ppo(lambda : gym.make(args.env), actor_critic=core.MLPActorCritic,
 		ac_kwargs=dict(hidden_sizes=[args.hid]*args.l), gamma=args.gamma,
 		seed=args.seed, steps_per_epoch=args.steps, epochs=args.epochs,
 		logger_kwargs=logger_kwargs, TensorBoard=args.NoTB, save_nn=args.NoSave,
 		save_every=args.SaveEvery, load_latest=args.LoadLatest, load_custom=args.LoadCustom,
-		LoadPath = LoadPath, plot=args.NoPlot, RTA=args.RTA)
+		LoadPath = LoadPath, RTA_type=args.RTA)
 
 	# Show experiment duration
 	if proc_id() == 0:
 		print(f"Run Time: {time.time()-starttime:0.4} seconds")
-
-	# Show plot if True
-	if args.NoPlot and proc_id() == 0:
-		plt.show()
-
 
 
 #** To start TensorBoard, run the following command in your terminal with your specific path to spacecraftdockingrl:**

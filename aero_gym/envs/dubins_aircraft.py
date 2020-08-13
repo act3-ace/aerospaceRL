@@ -80,11 +80,14 @@ class DubinsAircraft(gym.Env):
 		self.r_aircraft = 25 #ft - radius of the aircraft
 		self.r_mountain = 500 #ft
 		self.action_magnitude = 1.5 # degrees/sec
-		self.tau = 0.1 #sec (time step)
+		self.tau = 2 #sec (time step)
 		self.random_velocity = False # Set to True to allow random inital velocity
 		self.random_mountain = False # Set to True to allow random inital position (aircraft always points at mountain)
 		self.integrator = 'Euler' # Either 'Quad', 'RK45', or 'Euler' (default)
-		self.success = 0
+		self.success = 0 # Used to count success rate for an epoch
+		self.failure = 0 # Used to count out of bounds rate for an epoch
+		self.crash = 0 # Used to count crash rate for an epoch
+		self.overtime = 0 # Used to count over max time/control for an epoch
 
 		self.scale_factor = 100  #inverse dialation of simulation size
 		self.planescale = 1 #dialation of aircraft size
@@ -128,7 +131,7 @@ class DubinsAircraft(gym.Env):
 
 	def reset(self):
 		self.control_input = 0 # Used to sum total control input for an episode
-		
+
 		if self.random_velocity:
 			# Generate random value for aircraft velocity
 			self.velocity = self.np_random.uniform(low=60, high=1145) #ft/s
@@ -253,11 +256,13 @@ class DubinsAircraft(gym.Env):
 				reward += (mountain_dist - 500)/ 10 # Decreasing reward for getting close to mountain
 		elif mountain_dist <= 0:
 			reward = -1000 # -1000 for crashing
+			self.crash += 1
 		elif x >= self.x_goal:
 			reward = 1000 # +1000 for reaching goal
 			self.success += 1
 		else:
 			reward = -5000 # -5000 for going out of bounds
+			self.failure += 1
 
 		# Print termination condition (if allowed)
 		if done and self.termination_condition:
