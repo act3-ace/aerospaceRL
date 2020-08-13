@@ -14,10 +14,20 @@ Follow the installation instructions for Anaconda 3 [here](https://docs.continuu
 5. In the directory you want to save the environment, run the command:  
 `git clone [copy link here]`
 6. Then run the commands:  
-`cd spacecraftpublicrelease`  
+`cd aerospacerl`  
 `pip install -e .`  
 
 To test your installation, run the `install_test.py` file. You should see a rendering of the spacecraft docking environment.  
+
+## Gurobi Installation (Required for some RTA algorithms)  
+In order to use the IASIF and CBF_for_speed_limit RTA algorithms, install Gurobi Optimization using the following steps. A license is required. Academic licenses are free.  
+1. In your terminal, make sure the aero conda environment is activated. Activate it by running:  
+`conda activate aero`  
+2. Add Gurobi to your default search list:  
+`conda config --add channels http://conda.anaconda.org/gurobi`  
+3. Install Gurobi:  
+`conda install gurobi`  
+4. Obtain a license [here](https://www.gurobi.com/documentation/9.0/quickstart_linux/retrieving_and_setting_up_.html#section:RetrieveLicense).  
 
 ## Using the custom environments (In Python)
 There are two custom environments: `dubins_aircraft.py` and `spacecraft_docking.py`, each with a discrete and continuous action space.  The code for these environments is located at `dubins_gym/envs/`  

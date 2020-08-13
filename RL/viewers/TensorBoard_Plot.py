@@ -1,5 +1,6 @@
 '''
 Plots TensorBoard data using matplotlib
+Used with Spacecraft Docking Environment
 
 Created by: Kyle Dunlap
 Mentor: Kerianne Hobbs

@@ -106,8 +106,8 @@ class SpacecraftDocking(gym.Env):
 		self.p_var = 3 #(deg) the variation of launch angle (multiply by 2 to get full angle)
 
 		#Ellipse Variables#
-		self.ellipse_a1 = 1000 #m
-		self.ellipse_b1 = 500 #m
+		self.ellipse_a1 = 200 #m
+		self.ellipse_b1 = 100 #m
 		self.ellipse_a2 = 40 #m
 		self.ellipse_b2 = 20 #m
 		self.ellipse_quality = 150 #1/x * pi

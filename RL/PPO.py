@@ -1,6 +1,6 @@
 '''
 OpenAI SpinningUp's implementation of PPO, designed to work with the spacecraft
-docking environment
+docking and dubins-aircraft environments (Discrete or Continuous actions)
 
 Modified by: Kyle Dunlap
 Mentor: Kerianne Hobbs
@@ -251,10 +251,7 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 
 	# Load model if True
 	if load_latest:
-		if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
-			models = glob.glob(f"{PATH}/models/sc/*")
-		elif env_name == 'dubins-aircraft-v0' or env_name == 'dubins-aircraft-continuous-v0':
-			models = glob.glob(f"{PATH}/models/ac/*")
+		models = glob.glob(f"{PATH}/models/PPO/*")
 		LoadPath = max(models, key=os.path.getctime)
 		ac.load_state_dict(torch.load(LoadPath))
 	elif load_custom:
@@ -375,9 +372,9 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 	# Create TensorBoard file if True
 	if TensorBoard and proc_id() == 0:
 		if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
-			Name = f"{PATH}/runs/sc/Spacecraft-docking-" + current_time
+			Name = f"{PATH}/runs/Spacecraft-docking-" + current_time
 		elif env_name == 'dubins-aircraft-v0' or env_name == 'dubins-aircraft-continuous-v0':
-			Name = f"{PATH}/runs/ac/Dubins-aircraft-" + current_time
+			Name = f"{PATH}/runs/Dubins-aircraft-" + current_time
 		writer = SummaryWriter(Name)
 
 	# Main loop: collect experience in env and update/log each epoch
@@ -505,14 +502,12 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 			if save_nn and epoch % save_every == 0 and epoch != 0:
 				if not os.path.isdir(f"{PATH}/models"):
 					os.mkdir(f"{PATH}/models")
-				if not os.path.isdir(f"{PATH}/models/sc"):
-					os.mkdir(f"{PATH}/models/sc")
-				if not os.path.isdir(f"{PATH}/models/ac"):
-					os.mkdir(f"{PATH}/models/ac")
+				if not os.path.isdir(f"{PATH}/models/PPO"):
+					os.mkdir(f"{PATH}/models/PPO")
 				if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
-					Name2 = f"{PATH}/models/sc/Spacecraft-docking-" + current_time + f"-epoch{epoch}.dat"
+					Name2 = f"{PATH}/models/PPO/Spacecraft-docking-" + current_time + f"-epoch{epoch}.dat"
 				elif env_name == 'dubins-aircraft-v0' or env_name == 'dubins-aircraft-continuous-v0':
-					Name2 = f"{PATH}/models/ac/Dubins-aircraft-" + current_time + f"-epoch{epoch}.dat"
+					Name2 = f"{PATH}/models/PPO/Dubins-aircraft-" + current_time + f"-epoch{epoch}.dat"
 				torch.save(ac.state_dict(), Name2)
 
 	# Average episodes per hour, episode per epoch
@@ -525,14 +520,12 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 		if save_nn:
 			if not os.path.isdir(f"{PATH}/models"):
 				os.mkdir(f"{PATH}/models")
-			if not os.path.isdir(f"{PATH}/models/sc"):
-				os.mkdir(f"{PATH}/models/sc")
-			if not os.path.isdir(f"{PATH}/models/ac"):
-				os.mkdir(f"{PATH}/models/ac")
+			if not os.path.isdir(f"{PATH}/models/PPO"):
+				os.mkdir(f"{PATH}/models/PPO")
 			if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
-				Name2 = f"{PATH}/models/sc/Spacecraft-docking-" + current_time + "-final.dat"
+				Name2 = f"{PATH}/models/PPO/Spacecraft-docking-" + current_time + "-final.dat"
 			elif env_name == 'dubins-aircraft-v0' or env_name == 'dubins-aircraft-continuous-v0':
-				Name2 = f"{PATH}/models/ac/Dubins-aircraft-" + current_time + "-final.dat"
+				Name2 = f"{PATH}/models/PPO/Dubins-aircraft-" + current_time + "-final.dat"
 			torch.save(ac.state_dict(), Name2)
 
 		# Print statistics on episodes
@@ -581,8 +574,5 @@ if __name__ == '__main__':
 
 '''
 ** To start TensorBoard, run the following command in your terminal with your specific path to aerospacerl:**
-Aircraft:
-tensorboard --logdir aerospacerl/RL/runs/ac
-Spacecraft:
-tensorboard --logdir aerospacerl/RL/runs/sc
+tensorboard --logdir aerospacerl/RL/runs
 '''

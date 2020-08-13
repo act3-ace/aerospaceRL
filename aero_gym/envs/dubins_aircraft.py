@@ -88,6 +88,8 @@ class DubinsAircraft(gym.Env):
 		self.failure = 0 # Used to count out of bounds rate for an epoch
 		self.crash = 0 # Used to count crash rate for an epoch
 		self.overtime = 0 # Used to count over max time/control for an epoch
+		self.RTA_on = False # (currently does not change from False)
+		self.steps = 0 # Currently not counting
 
 		self.scale_factor = 100  #inverse dialation of simulation size
 		self.planescale = 1 #dialation of aircraft size

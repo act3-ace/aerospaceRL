@@ -33,12 +33,13 @@ def model(env_name, hidden_sizes, latest, algo, Path):
 	env = gym.make(env_name)
 
 	if latest == True:
-		if env_name == 'spacecraft-docking-continuous-v0' or env_name == 'spacecraft-docking-v0':
-			PATH2 = sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models/sc'))
-		elif env_name == 'dubins-aircraft-v0' or env_name == 'dubins-aircraft-continuous-v0':
-			PATH2 = sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models/ac'))
+		if algo == 'VPG':
+			PATH2 = os.path.join(os.path.dirname(__file__), '..', 'models/VPG')
+		elif algo == 'PPO':
+			PATH2 = os.path.join(os.path.dirname(__file__), '..', 'models/PPO')
 
 		# Uses latest model
+		print(PATH2)
 		models = glob.glob(f"{PATH2}/*")
 		latest_model = max(models, key=os.path.getctime)
 
@@ -98,21 +99,22 @@ def view(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], epis
 	# Set environment
 	env = gym.make(env_name)
 
-	if custom_settings is None: #if no settings given, pass in defaults
-		#c = (thrust='Block', trace=5, v_arrow=True, f_arrow=True, stars=200, a1=0, b1=0, a2=0, b2=0, e_qualtity=0)
-		c = ("Block", 5, True, True, 200, 0, 0, 0, 0, 0, 0)
-	else:
-		c = custom_settings
-	env.thrustVis = c[0] #what type of thrust visualization to use. 'Particle', 'Block', 'None'
-	env.trace = c[1] #spacing between trace dots
-	env.velocityArrow = c[2] #if velocity arrow is shown
-	env.forceArrow = c[3] #if force arrow is shown
-	env.stars = c[4] #sets number of stars
-	env.ellipse_a1 = c[5] #m
-	env.ellipse_b1 = c[6] #m
-	env.ellipse_a2 = c[7] #m
-	env.ellipse_b2 = c[8] #m
-	env.ellipse_quality = c[9] #1/x * pi
+	if env_name == 'spacecraft-docking-v0' or env_name == 'spacecraft-docking-continuous-v0':
+		if custom_settings is None: #if no settings given, pass in defaults
+			#c = (thrust='Block', trace=5, v_arrow=True, f_arrow=True, stars=200, a1=0, b1=0, a2=0, b2=0, e_qualtity=0)
+			c = ("Block", 5, True, True, 200, 0, 0, 0, 0, 0, 0)
+		else:
+			c = custom_settings
+		env.thrustVis = c[0] #what type of thrust visualization to use. 'Particle', 'Block', 'None'
+		env.trace = c[1] #spacing between trace dots
+		env.velocityArrow = c[2] #if velocity arrow is shown
+		env.forceArrow = c[3] #if force arrow is shown
+		env.stars = c[4] #sets number of stars
+		env.ellipse_a1 = c[5] #m
+		env.ellipse_b1 = c[6] #m
+		env.ellipse_a2 = c[7] #m
+		env.ellipse_b2 = c[8] #m
+		env.ellipse_quality = c[9] #1/x * pi
 
 	# Define best action for specified algorithm
 	if algo == 'VPG':
@@ -188,7 +190,7 @@ def view(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], epis
 				RTA_percent += 1
 
 		# Print episode stats
-		print(f"View Episode: {episode} \t Rewards: {Rewards:5.2f} \t Time (sec): {env.steps*env.tau:5.1f} \t RTA On %: {RTA_percent/(env.steps+1)*100:2.1f} \t Delta V (m/s): {env.control_input/env.mass_deputy:6.2f}")
+		print(f"View Episode: {episode} \t Rewards: {Rewards:5.2f} \t Time (sec): {env.steps*env.tau:5.1f} \t RTA On %: {RTA_percent/(env.steps+1)*100:2.1f}")
 
 	env.close()
 
@@ -196,6 +198,7 @@ def view(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], epis
 def plot(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], episodes=10, latest=False, algo='PPO', RTA_type='off', Path=None, position=True, velocity=True, force=True, vel_pos=True):
 
 	"""
+	Currently only for Spacecraft Docking Environment
 	env_name: Environment name
 	hidden_sizes: Hidden layers/nodes for neural network
 	episodes: Number of episodes to render
@@ -305,7 +308,7 @@ def plot(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], epis
 				# plt.plot(env.rH,env.vH,'rx')
 
 		# Print episode stats
-		print(f"Plot Episode: {episode} \t Rewards: {Rewards:5.2f} \t Time (sec): {env.steps*env.tau:5.1f} \t RTA On %: {RTA_percent/(env.steps+1)*100:2.1f} \t Delta V (m/s): {env.control_input/env.mass_deputy:6.2f}")
+		print(f"Plot Episode: {episode} \t Rewards: {Rewards:5.2f} \t Time (sec): {env.steps*env.tau:5.1f} \t RTA On %: {RTA_percent/(env.steps+1)*100:2.1f}")
 		print(f"Run time: {time.time()-start_time:.2f}")
 
 		# Plot position, velocity, force trajectories
@@ -372,7 +375,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--Render', default=False, action='store_true') # Add arg '--Render' ro render episodes
 	parser.add_argument('--Plot', default=False, action='store_true') # Add arg '--Plot' to plot episodes
-	parser.add_argument('--env_name', type=str, default='spacecraft-docking-continuous-v0') # Environment Name
+	parser.add_argument('--env', type=str, default='spacecraft-docking-continuous-v0') # Environment Name
 	parser.add_argument('--algo', type=str, default='PPO') # Algorithm used in training
 	parser.add_argument('--episodes', type=int, default=1) # Number of episodes to display
 	parser.add_argument('--LoadLatest', default=False, action='store_true') # Load NN - Add arg '--LoadLatest' to load last saved model instead of custom model
@@ -388,9 +391,14 @@ if __name__ == '__main__':
 	custom_file = f"{PATH}/{args.model}.dat"
 
 	if args.Render:
-		view(env_name=args.env_name, episodes=args.episodes, latest=args.LoadLatest, algo=args.algo, RTA_type=args.RTA, Path=custom_file, render_every=args.render_every, hidden_sizes=[args.hid]*args.l)
+		view(env_name=args.env, episodes=args.episodes, latest=args.LoadLatest, algo=args.algo, RTA_type=args.RTA, Path=custom_file, render_every=args.render_every, hidden_sizes=[args.hid]*args.l)
+
+	"""
+	Plotting Currently Only for Spacecraft Docking Environment
+	"""
 
 	if args.Plot:
+		position, velocity, force, vel_pos = False, False, False, False
 		for arg in args.PlotTypes:
 			if arg == 'position':
 				position = True
@@ -401,4 +409,4 @@ if __name__ == '__main__':
 			elif arg == 'vel_pos':
 				vel_pos = True
 
-		plot(env_name=args.env_name, episodes=args.episodes, latest=args.LoadLatest, algo=args.algo, RTA_type=args.RTA, Path=custom_file, hidden_sizes=[args.hid]*args.l, position=position, velocity=velocity, force=force, vel_pos=vel_pos)
+		plot(env_name=args.env, episodes=args.episodes, latest=args.LoadLatest, algo=args.algo, RTA_type=args.RTA, Path=custom_file, hidden_sizes=[args.hid]*args.l, position=position, velocity=velocity, force=force, vel_pos=vel_pos)

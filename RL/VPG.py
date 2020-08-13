@@ -1,6 +1,6 @@
 '''
 OpenAI SpinningUp's implementation of simplest policy gradient, designed to work
-with the dubins aircraft and spacecraft docking environments
+with the dubins aircraft and spacecraft docking environments (Discrete action versions)
 
 Modified by: Kyle Dunlap
 Mentor: Kerianne Hobbs
@@ -37,7 +37,7 @@ def mlp(sizes, activation=nn.Tanh, output_activation=nn.Identity):
 
 def train(env_name='dubins-aircraft-v0', hidden_sizes=[400,300], lr=1e-4,
 		  epochs=125, batch_size=5000, render=False, TensorBoard=True,
-		  save_nn=False, save_every=1000, RTA = False):
+		  save_nn=False, save_every=1000, RTA = False, seed=0):
 
 	# make environment, check spaces, get obs / act dims
 	env = gym.make(env_name)
@@ -47,7 +47,7 @@ def train(env_name='dubins-aircraft-v0', hidden_sizes=[400,300], lr=1e-4,
 		"This example only works for envs with discrete action spaces."
 
 	# Use same seed for each experiment
-	env.seed(0)
+	env.seed(seed)
 
 	# Save start time and count episodes
 	time0 = time.time()
@@ -166,9 +166,9 @@ def train(env_name='dubins-aircraft-v0', hidden_sizes=[400,300], lr=1e-4,
 	# Create TensorBoard file if True
 	if TensorBoard:
 		if env_name=='dubins-aircraft-v0':
-			Name = f"{PATH}/runs/ac/Dubins-aircraft-" + current_time
+			Name = f"{PATH}/runs/Dubins-aircraft-" + current_time
 		elif env_name=='spacecraft-docking-v0':
-			Name = f"{PATH}/runs/sc/Spacecraft-docking-" + current_time
+			Name = f"{PATH}/runs/Spacecraft-docking-" + current_time
 		writer = SummaryWriter(Name)
 
 	try: # Used to break while loop
@@ -194,14 +194,12 @@ def train(env_name='dubins-aircraft-v0', hidden_sizes=[400,300], lr=1e-4,
 				if save_nn and i % save_every == 0 and i != 0:
 					if not os.path.isdir(f"{PATH}/models"):
 						os.mkdir(f"{PATH}/models")
+					if not os.path.isdir(f"{PATH}/models/VPG"):
+						os.mkdir(f"{PATH}/models/VPG")
 					if env_name=='dubins-aircraft-v0':
-						if not os.path.isdir(f"{PATH}/models/ac"):
-							os.mkdir(f"{PATH}/models/ac")
-						Name2 = f"{PATH}/models/ac/Dubins-aircraft-" + current_time + f"-epoch{i}.dat"
+						Name2 = f"{PATH}/models/VPG/Dubins-aircraft-" + current_time + f"-epoch{i}.dat"
 					elif env_name=='spacecraft-docking-v0':
-						if not os.path.isdir(f"{PATH}/models/sc"):
-							os.mkdir(f"{PATH}/models/sc")
-						Name2 = f"{PATH}/models/sc/Spacecraft-docking-" + current_time + f"-epoch{i}.dat"
+						Name2 = f"{PATH}/models/VPG/Spacecraft-docking-" + current_time + f"-epoch{i}.dat"
 					torch.save(logits_net.state_dict(), Name2)
 
 			break
@@ -214,14 +212,12 @@ def train(env_name='dubins-aircraft-v0', hidden_sizes=[400,300], lr=1e-4,
 	if save_nn:
 		if not os.path.isdir(f"{PATH}/models"):
 			os.mkdir(f"{PATH}/models")
+		if not os.path.isdir(f"{PATH}/models/VPG"):
+			os.mkdir(f"{PATH}/models/VPG")
 		if env_name=='dubins-aircraft-v0':
-			if not os.path.isdir(f"{PATH}/models/ac"):
-				os.mkdir(f"{PATH}/models/ac")
-			Name2 = f"{PATH}/models/ac/Dubins-aircraft-" + current_time + "-final.dat"
+			Name2 = f"{PATH}/models/VPG/Dubins-aircraft-" + current_time + "-final.dat"
 		elif env_name=='spacecraft-docking-v0':
-			if not os.path.isdir(f"{PATH}/models/sc"):
-				os.mkdir(f"{PATH}/models/sc")
-			Name2 = f"{PATH}/models/sc/Spacecraft-docking-" + current_time + "-final.dat"
+			Name2 = f"{PATH}/models/VPG/Spacecraft-docking-" + current_time + "-final.dat"
 		torch.save(logits_net.state_dict(), Name2)
 
 	# Print statistics on episodes
@@ -248,7 +244,7 @@ if __name__ == '__main__':
 	parser.add_argument('--hid', type=int, default=64) # Hidden layer nodes
 	parser.add_argument('--l', type=int, default=2) # Number of hidden layers
 	parser.add_argument('--lr', type=float, default=1e-3) # Learning Rate
-	# parser.add_argument('--seed', '-s', type=int, default=0) # Seed for randomization
+	parser.add_argument('--seed', type=int, default=0) # Seed for randomization
 	parser.add_argument('--steps', type=int, default=5000) # Steps per epoch (Defaults to enough to run at least one episode per core)
 	parser.add_argument('--epochs', type=int, default=1000) # Number of epochs
 	parser.add_argument('--NoTB', default=True, action='store_false') # Log to TnesorBoard - Add arg '--NoTB' if you don't want to log to TensorBoard
@@ -258,18 +254,15 @@ if __name__ == '__main__':
 	parser.add_argument('--render', default=False, action='store_true') # Render if True
 	args = parser.parse_args()
 
-train(env_name=args.env, render=args.render, lr=args.lr, epochs=args.epochs, batch_size=args.steps,
- hidden_sizes=[args.hid]*args.l, TensorBoard=args.NoTB, save_nn=args.NoSave, save_every=args.SaveEvery, RTA=args.RTA)
+	train(env_name=args.env, render=args.render, lr=args.lr, epochs=args.epochs, batch_size=args.steps, seed=args.seed,
+	 hidden_sizes=[args.hid]*args.l, TensorBoard=args.NoTB, save_nn=args.NoSave, save_every=args.SaveEvery, RTA=args.RTA)
 
 
-# Show experiment duration
-print(f"Run Time: {time.time()-start_time:0.4} seconds")
+	# Show experiment duration
+	print(f"Run Time: {time.time()-start_time:0.4} seconds")
 
 
 '''
 ** To start TensorBoard, run the following command in your terminal with your specific path to aerospacerl:**
-Aircraft:
-tensorboard --logdir aerospacerl/RL/runs/ac
-Spacecraft:
-tensorboard --logdir aerospacerl/RL/runs/sc
+--logdir aerospacerl/RL/runs
 '''

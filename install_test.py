@@ -3,8 +3,8 @@ import aero_gym
 
 # env = gym.make('dubins-aircraft-v0')
 # env = gym.make('dubins-aircraft-continuous-v0')
-env = gym.make('spacecraft-docking-v0')
-# env = gym.make('spacecraft-docking-continuous-v0')
+# env = gym.make('spacecraft-docking-v0')
+env = gym.make('spacecraft-docking-continuous-v0')
 
 done = False
 env.reset()
