@@ -579,7 +579,10 @@ if __name__ == '__main__':
 	if proc_id() == 0:
 		print(f"Run Time: {time.time()-starttime:0.4} seconds")
 
-
-#** To start TensorBoard, run the following command in your terminal with your specific path to spacecraftdockingrl:**
-# Spacecraft:
-# tensorboard --logdir spacecraftdockingrl/RL_algorithms/runs/sc
+'''
+** To start TensorBoard, run the following command in your terminal with your specific path to aerospacerl:**
+Aircraft:
+tensorboard --logdir aerospacerl/RL/runs/ac
+Spacecraft:
+tensorboard --logdir aerospacerl/RL/runs/sc
+'''

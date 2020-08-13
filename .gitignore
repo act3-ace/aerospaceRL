@@ -5,5 +5,5 @@ RL/runs/
 RL/models/
 RL/__pycache__/
 RL/data/
-RL/asif/__pycache__/
+RL/RunTimeAssurance/__pycache__/
 RL/spinup_utils/__pycache__/
