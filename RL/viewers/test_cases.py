@@ -23,9 +23,9 @@ RANGE = 1000 # m
 #################
 
 import gym
-import dubins_gym
+import aero_gym
 import os
-import core_spinup as core
+import spinup_utils.core as core
 import math
 import torch
 import torch.nn as nn
@@ -36,9 +36,8 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 16}) # For Presentation/Paper
 plt.rcParams.update({'figure.autolayout': True})
 
-# Assumes spacecraftdockingrl is in your home directory
-sys.path.append(os.path.join(os.path.dirname(__file__), 'PPO-spinup/asif'))
-PATH = os.path.expanduser("~") + "/spacecraftdockingrl/RL_algorithms/saved_models"
+# Assumes aerospacerl is in your home directory
+PATH = os.path.expanduser("~") + "/aerospacerl/RL/saved_models"
 if not os.path.isdir(PATH):
     print('PATH ISSUE - UPDATE YOUR PATH')
     exit()
@@ -65,11 +64,11 @@ Vy = [0.1, -0.1, -0.25, 0.25, 0.5, -0.5, -0.75, 1, 0.75, -1]
 
 # Import ASIF
 if Case == 'Velocity':
-    from Simple_velocity_limit import ASIF
+    from asif.Simple_velocity_limit import ASIF
 elif Case == 'Simplex':
-    from ISimplex import ASIF
+    from asif.ISimplex import ASIF
 elif Case == 'IASIF':
-    from IASIF import ASIF
+    from asif.IASIF import ASIF
 
 if Case == 'Velocity' or Case == 'Simplex' or Case == 'IASIF':
     # Call ASIF class

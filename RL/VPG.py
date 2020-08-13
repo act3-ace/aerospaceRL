@@ -1,3 +1,11 @@
+'''
+OpenAI SpinningUp's implementation of simplest policy gradient, designed to work
+with the dubins aircraft and spacecraft docking environments
+
+Modified by: Kyle Dunlap
+Mentor: Kerianne Hobbs
+'''
+
 import torch
 import torch.nn as nn
 from torch.distributions.categorical import Categorical
@@ -5,7 +13,7 @@ from torch.optim import Adam
 import numpy as np
 import gym
 from gym.spaces import Discrete, Box
-import dubins_gym
+import aero_gym
 import matplotlib.pyplot as plt
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
@@ -18,7 +26,7 @@ start_time = time.time()
 current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
 
 # Assumes spacecraftdockingrl is in your home directory
-PATH = os.path.expanduser("~") + "/spacecraftdockingrl/RL_algorithms"
+PATH = os.path.expanduser("~") + "/aerospacerl/RL"
 if not os.path.isdir(PATH):
 	print('PATH ISSUE - UPDATE YOUR PATH')
 	exit()
@@ -393,22 +401,24 @@ def train(env_name='dubins-aircraft-v0', hidden_sizes=[400,300], lr=1e-4,
 	# Print statistics on episodes
 	print(f"Episodes per hour: {total_episodes/(time.time()-time0)*3600:.0f}, Episodes per epoch: {total_episodes/epochs:.0f}, Epochs per hour: {epochs/(time.time()-time0)*3600:.0f}")
 
+'''
+Main training function:
+env_name: What environment you are Using
+hidden_sizes: hidden layers in neural network
+lr: learning rate (used in optimizer)
+epochs: groups of episodes trained together (one training per epoch)
+batch_size: minimum number of simulated steps per epoch
+render: True renders once per epoch, False does not
+TensorBoard: True saves data used in TensorBoard (Update your path), False does not
+RandomVelo/RandomPos: Use for dubins-aircraft-v0, True allows random aircraft velocity/mountain position
+plot/plot_every: plot=True plots trajectory every [plot_every] epochs
+plot2: Used to plot either 'Force' or 'Velocity' for spacecraft-docking subplot 2
+RTA: Used to turn RTA on or off to constrain velocity to max velocity for spacecraft-docking
+save_nn: Saves neural network to specified location
+save_every: Saves neural network every _ epochs
+load: True to load previous model (update path), False to create new model
+'''
 
-# Main training function:
-# env_name: What environment you are Using
-# hidden_sizes: hidden layers in neural network
-# lr: learning rate (used in optimizer)
-# epochs: groups of episodes trained together (one training per epoch)
-# batch_size: minimum number of simulated steps per epoch
-# render: True renders once per epoch, False does not
-# TensorBoard: True saves data used in TensorBoard (Update your path), False does not
-# RandomVelo/RandomPos: Use for dubins-aircraft-v0, True allows random aircraft velocity/mountain position
-# plot/plot_every: plot=True plots trajectory every [plot_every] epochs
-# plot2: Used to plot either 'Force' or 'Velocity' for spacecraft-docking subplot 2
-# RTA: Used to turn RTA on or off to constrain velocity to max velocity for spacecraft-docking
-# save_nn: Saves neural network to specified location
-# save_every: Saves neural network every _ epochs
-# load: True to load previous model (update path), False to create new model
 train(env_name="spacecraft-docking-v0", render=False, lr=1e-3, epochs=1000, batch_size=5000,
  hidden_sizes=[64, 64], TensorBoard=True, RandomVelo=False, RandomPos=False, plot=True, plot_every=500,
  plot2='Velocity', RTA=False, save_nn=True, save_every=1000, load=False)
@@ -420,8 +430,10 @@ print(f"Run Time: {time.time()-start_time:0.4} seconds")
 # Show Plot (comment out if plot=False)
 plt.show()
 
-#** To start TensorBoard, run the following command in your terminal with your specific path to spacecraftdockingrl:**
-# Aircraft:
-# tensorboard --logdir spacecraftdockingrl/RL_algorithms/runs/ac
-# Spacecraft:
-# tensorboard --logdir spacecraftdockingrl/RL_algorithms/runs/sc
+'''
+** To start TensorBoard, run the following command in your terminal with your specific path to aerospacerl:**
+Aircraft:
+tensorboard --logdir aerospacerl/RL/runs/ac
+Spacecraft:
+tensorboard --logdir aerospacerl/RL/runs/sc
+'''

@@ -44,8 +44,8 @@ import numpy as np
 plt.rcParams.update({'font.size': 20}) # For Paper
 plt.rcParams.update({'figure.autolayout': True})
 
-# Assumes spacecraftdockingrl is in your home directory
-PATH = os.path.expanduser("~") + "/spacecraftdockingrl/RL_algorithms/saved_runs"
+# Assumes aerospacerl is in your home directory
+PATH = os.path.expanduser("~") + "/aerospacerl/RL/saved_runs"
 if not os.path.isdir(PATH):
 	print('PATH ISSUE - UPDATE YOUR PATH')
 	exit()

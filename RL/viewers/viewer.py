@@ -8,25 +8,21 @@ Mentor: Kerianne Hobbs
 import torch
 import torch.nn as nn
 import gym
-import dubins_gym
+import aero_gym
 import numpy as np
 import os
 import glob
 from torch.distributions.categorical import Categorical
 import matplotlib.pyplot as plt
-import sys
 import time
-
-# Path to ASIF
-sys.path.append(os.path.join(os.path.dirname(__file__), 'PPO-spinup/asif'))
 
 # Loads specified neural network data
 def model(env_name, hidden_sizes, latest, algo, Path):
 	env = gym.make(env_name)
 
 	if latest == True:
-		# Assumes spacecraftdockingrl is in your home directory
-		PATH = os.path.expanduser("~") + "/spacecraftdockingrl/RL_algorithms/models/sc"
+		# Assumes aerospacerl is in your home directory
+		PATH = os.path.expanduser("~") + "/aerospacerl/RL/models/sc"
 		if not os.path.isdir(PATH):
 			print('PATH ISSUE - UPDATE YOUR PATH')
 			exit()
@@ -59,7 +55,7 @@ def model(env_name, hidden_sizes, latest, algo, Path):
 		net = logits_net
 
 	elif algo == 'PPO':
-		import core_spinup as core
+		import spinup_utils.core as core
 
 		# Define Neural Network
 		ac_kwargs = dict(hidden_sizes=hidden_sizes)
@@ -107,13 +103,13 @@ def view(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, la
 
 		# Set ASIF
 		if Asif == 'CBF' and RTA:
-			from CBF_for_speed_limit import ASIF
+			from asif.CBF_for_speed_limit import ASIF
 		elif Asif == 'Velocity' and RTA:
-			from Simple_velocity_limit import ASIF
+			from asif.Simple_velocity_limit import ASIF
 		elif Asif == 'IASIF':
-			from IASIF import ASIF
+			from asif.IASIF import ASIF
 		elif Asif == 'ISimplex':
-			from ISimplex import ASIF
+			from asif.ISimplex import ASIF
 
 		# Initialize RTA variables if True
 		if RTA:
@@ -193,13 +189,13 @@ def plot(env_name='spacecraft-docking-v0', hidden_sizes=[64,64], episodes=10, la
 
 		# Set ASIF
 		if Asif == 'CBF':
-			from CBF_for_speed_limit import ASIF
+			from asif.CBF_for_speed_limit import ASIF
 		elif Asif == 'Velocity':
-			from Simple_velocity_limit import ASIF
+			from asif.Simple_velocity_limit import ASIF
 		elif Asif == 'IASIF':
-			from IASIF import ASIF
+			from asif.IASIF import ASIF
 		elif Asif == 'ISimplex':
-			from ISimplex import ASIF
+			from asif.ISimplex import ASIF
 
 		asif = ASIF(env)
 
@@ -360,7 +356,7 @@ render_every: Render every _ steps
 position, velocity, force, and vel_pos: Plot trajectory, velocity. vs time, force vs. time, velocity vs. position respectively if True
 '''
 
-custom_file_path = "spacecraftdockingrl/RL_algorithms/saved_models/Velocity1.dat"
+custom_file_path = "aerospacerl/RL/saved_models/Velocity1.dat"
 
 # view(env_name='spacecraft-docking-continuous-v0', episodes=1, latest=False, algo='PPO', RTA=True, Asif='Velocity', Path=custom_file_path, render_every=4)
 # view(env_name='spacecraft-docking-v0', episodes=3, latest=False, algo='VPG', RTA = True, Path=custom_file_path, render_every=4)

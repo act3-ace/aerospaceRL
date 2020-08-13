@@ -67,7 +67,7 @@ import random
 import numpy as np
 from fractions import Fraction
 from scipy import integrate
-from dubins_gym.envs.rendering import DockingRender as render
+from aero_gym.envs.rendering import DockingRender as render
 
 class SpacecraftDocking(gym.Env):
 

@@ -8,7 +8,7 @@ Description:
 	A GUI for basic interaction with the Spacecraft Docking files, realtime plotting, and simulation recalls
 
 '''
-from RL_algorithms import viewer
+import viewer
 import tkinter as tk
 from tkinter import *
 from tkinter import filedialog
