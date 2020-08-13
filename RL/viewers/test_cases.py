@@ -32,7 +32,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'spinup_utils'))
-import spinup_utils.core as core
+import core
 
 plt.rcParams.update({'font.size': 16}) # For Presentation/Paper
 plt.rcParams.update({'figure.autolayout': True})
