@@ -41,7 +41,7 @@ Reward:
 
 Starting State:
 	Deputy start 1000 m away from chief at random angle
-	x and y velocity are both between -1.5 and +1.5 m/s
+	x and y velocity are both between -1.44 and +1.44 m/s
 
 Episode Termination:
 	Deputy docks with chief
@@ -89,6 +89,7 @@ class SpacecraftDocking(gym.Env):
 		self.init_velocity = (self.position_deputy + 625) / 1125 # m/s (+/- x and y)
 		self.RTA_reward = 'NoRTA' # Changes reward for different RTA, either 'NoRTA', 'CBF', 'Velocity', 'IASIF', or 'ISimplex'
 
+		#For Tensorboard Plots#
 		self.RTA_on = False # Flag for if RTA is on or not, used for rewards
 		self.success = 0 # Used to count success rate for an epoch
 		self.failure = 0 # Used to count out of bounds rate for an epoch
@@ -96,7 +97,7 @@ class SpacecraftDocking(gym.Env):
 		self.overtime = 0 # Used to count over max time/control for an epoch
 
 		#Thrust & Particle Variables#
-		self.thrustVis = 'Block' #what type of thrust visualization to use. 'Particle', 'Block', 'None'
+		self.thrustVis = 'Particle' #what type of thrust visualization to use. 'Particle', 'Block', 'None'
 		self.particles = [] #list containing particle references
 		self.p_obj = [] #list containing particle objects
 		self.trans = [] #list containing particle
@@ -105,20 +106,20 @@ class SpacecraftDocking(gym.Env):
 		self.p_var = 3 #(deg) the variation of launch angle (multiply by 2 to get full angle)
 
 		#Ellipse Variables#
-		self.ellipse_a1 = 200 #m
-		self.ellipse_b1 = 100 #m
+		self.ellipse_a1 = 1000 #m
+		self.ellipse_b1 = 500 #m
 		self.ellipse_a2 = 40 #m
 		self.ellipse_b2 = 20 #m
 		self.ellipse_quality = 150 #1/x * pi
 
 		#Trace Variables#
-		self.trace = 5 #spacing between trace dots
+		self.trace = 5 #(steps)spacing between trace dots
 		self.traceMin = True #sets trace size to 1 (minimum) if true
 		self.tracectr = self.trace
 
 		#Customization Options#
-		self.viewer = None
-		self.showRes = False
+		self.viewer = None #gym thing - must be set to show up
+		self.showRes = False #if set to true, it will print resolution
 		self.scale_factor = .5 * 500 / self.position_deputy #sets the size of the rendering
 		self.velocityArrow = True #if velocity arrow is shown
 		self.forceArrow = True #if force arrow is shown
@@ -153,7 +154,7 @@ class SpacecraftDocking(gym.Env):
 		self.np_random, seed = seeding.np_random(seed)
 		return [seed]
 
-	def reset(self):
+	def reset(self): #called before each episode
 		self.steps = -1 # Step counter
 		self.control_input = 0 # Used to sum total control input for an episode
 
@@ -180,7 +181,7 @@ class SpacecraftDocking(gym.Env):
             # Stop program if invalid action is used
 			assert self.action_space.contains(action), "Invalid action"
 		else:
-			# Clip action to be within boundaries
+			# Clip action to be within boundaries - only for continuous
 			action = np.clip(action, -self.force_magnitude, self.force_magnitude)
 
 		# Extract current state data
