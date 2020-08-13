@@ -1,0 +1,8 @@
+aero_gym.egg-info/
+aero_gym/__pycache__/
+aero_gym/envs/__pycache__/
+RL/runs/
+RL/models/
+RL/__pycache__/
+RL/data/
+RL/asif/__pycache__/
