@@ -410,3 +410,9 @@ if __name__ == '__main__':
 				vel_pos = True
 
 		plot(env_name=args.env, episodes=args.episodes, latest=args.LoadLatest, algo=args.algo, RTA_type=args.RTA, Path=custom_file, hidden_sizes=[args.hid]*args.l, position=position, velocity=velocity, force=force, vel_pos=vel_pos)
+
+
+'''
+Example of how to run viewer in terminal from home directory, plot and render 2 episodes:
+python aerospacerl/RL/viewers/viewer.py --Render --Plot --episodes 2
+'''

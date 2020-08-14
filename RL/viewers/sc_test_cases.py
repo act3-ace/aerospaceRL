@@ -216,3 +216,8 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	main(Test=args.test, Train=args.train, RANGE=args.range, ac_kwargs=dict(hidden_sizes=[args.hid]*args.l))
+
+'''
+Example of how to run sc_test_cases in terminal from home directory, testing with Velocity Limit and using model trained with IASIF:
+python aerospacerl/RL/viewers/sc_test_cases.py --test Velocity --train IASIF
+'''

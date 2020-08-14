@@ -240,7 +240,7 @@ RTA: RTA is on if True
 if __name__ == '__main__':
 	import argparse
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--env', type=str, default='spacecraft-docking-v0') # Environment Name
+	parser.add_argument('--env', type=str, default='spacecraft-docking-v0') # Environment Name ('spacecraft-docking-v0', 'dubins-aircraft-v0')
 	parser.add_argument('--hid', type=int, default=64) # Hidden layer nodes
 	parser.add_argument('--l', type=int, default=2) # Number of hidden layers
 	parser.add_argument('--lr', type=float, default=1e-3) # Learning Rate
@@ -265,4 +265,9 @@ if __name__ == '__main__':
 '''
 ** To start TensorBoard, run the following command in your terminal with your specific path to aerospacerl:**
 --logdir aerospacerl/RL/runs
+'''
+
+'''
+Example of how to run VPG in terminal from home directory for 10 epochs with dubins aircraft environment:
+python aerospacerl/RL/VPG.py --epochs 10 --env dubins-aircraft-v0
 '''

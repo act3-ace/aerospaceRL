@@ -2,6 +2,8 @@
 Created by Kyle Dunlap and Kai Delsing  
 Mentor: Kerianne Hobbs  
 
+Links to paper?? Or baseline results??
+
 ## Installation
 1. Install Anaconda (Recommended):  
 Follow the installation instructions for Anaconda 3 [here](https://docs.continuum.io/anaconda/install/).  
@@ -11,11 +13,15 @@ Follow the installation instructions for Anaconda 3 [here](https://docs.continuu
 `conda activate aero`  
 4. Install OpenMPI (Ubuntu/Debian):  
 `sudo apt-get update && sudo apt-get install libopenmpi-dev`  
-5. In the directory you want to save the environment, run the command:  
+5. Install Python header files:  
+`sudo apt-get install python-dev`  
+6. In the directory you want to save the environment, run the command:  
 `git clone [copy link here]`
-6. Then run the commands:  
+7. Then run the commands:  
 `cd aerospacerl`  
 `pip install -e .`  
+If you get a memory error while running the previous command, run the following command:
+`pip install -e . --no-cache-dir`
 
 To test your installation, run the `install_test.py` file. You should see a rendering of the spacecraft docking environment.  
 

@@ -127,3 +127,8 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	main(FILE=args.Files, plots=args.Plots, cutoff=args.cutoff, smooth=args.smooth)
+
+'''
+Example of how to run TensorBoard_Plot in terminal from home directory, plot only delta-v with 50 episodes smoothing:
+python aerospacerl/RL/viewers/TensorBoard_Plot.py --Plots Delta-V --smooth 50
+'''

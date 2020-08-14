@@ -335,7 +335,7 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 					 DeltaLossPi=(loss_pi.item() - pi_l_old),
 					 DeltaLossV=(loss_v.item() - v_l_old))
 
-	# Import ASIF
+	# Import RTA
 	if RTA_type == 'CBF':
 		from CBF_for_speed_limit import RTA
 	elif RTA_type == 'Velocity':
@@ -345,7 +345,7 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 	elif RTA_type == 'ISimplex':
 		from ISimplex import RTA
 
-	# Call ASIF, define action conversion
+	# Call RTA, define action conversion
 	if RTA_type != 'off':
 		env.RTA_reward = RTA_type
 
@@ -534,7 +534,7 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 if __name__ == '__main__':
 	import argparse
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--env', type=str, default='spacecraft-docking-continuous-v0') # Environment Name
+	parser.add_argument('--env', type=str, default='spacecraft-docking-continuous-v0') # Environment Name ('spacecraft-docking-v0', 'spacecraft-docking-continuous-v0', 'dubins-aircraft-v0', 'dubins-aircraft-continuous-v0')
 	parser.add_argument('--hid', type=int, default=64) # Hidden layer nodes
 	parser.add_argument('--l', type=int, default=2) # Number of hidden layers
 	parser.add_argument('--gamma', type=float, default=0.99) # Discount factor
@@ -575,4 +575,9 @@ if __name__ == '__main__':
 '''
 ** To start TensorBoard, run the following command in your terminal with your specific path to aerospacerl:**
 tensorboard --logdir aerospacerl/RL/runs
+'''
+
+'''
+Example of how to run PPO in terminal from home directory, using Velocity RTA for 10 epochs:
+python aerospacerl/RL/PPO.py --RTA Velocity --epochs 10
 '''

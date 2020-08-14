@@ -8,9 +8,12 @@ env = gym.make('spacecraft-docking-continuous-v0')
 
 done = False
 env.reset()
+steps = 0
 while not done:
+	steps += 1
 	obs, rew, done, info = env.step(env.action_space.sample())
-	env.render()
+	if steps % 4 == 0:
+		env.render()
 
 env.close()
 print('Properly Installed!')
