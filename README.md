@@ -15,12 +15,12 @@ Follow the installation instructions for Anaconda 3 [here](https://docs.continuu
 `sudo apt-get update && sudo apt-get install libopenmpi-dev`  
 5. Install Python header files:  
 `sudo apt-get install python-dev`  
-6. In the directory you want to save the environment, run the command:  
+6. In the directory you want to save the environment, copy the cloning link and run the command:  
 `git clone [copy link here]`
 7. Then run the commands:  
 `cd aerospacerl`  
 `pip install -e .`  
-If you get a memory error while running the previous command, run the following command:
+If you get a memory error while running the previous command, run the following command:  
 `pip install -e . --no-cache-dir`
 
 To test your installation, run the `install_test.py` file. You should see a rendering of the spacecraft docking environment.  
@@ -53,8 +53,8 @@ gym.make('spacecraft-docking-continuous-v0')
 ```
 
 ## Running from the Command Line
-These files assume that you have Anaconda or equivalent and standard Python packages installed.
-1. To run from the command line, open a terminal
-2. To run using the correct Anaconda packages, type `conda activate aero`. This should make (aero) show up before you username.
-3. Navigate to the 'spacecraftpublicrelease/RL_algorithms' folder.
-4. Decide what algorithm you'd like to run, e.g. run the PPO RL algorithm `python PPO.py`
+These files assume that you have Anaconda or equivalent and standard Python packages installed.  
+1. To run from the command line, open a terminal  
+2. To run using the correct Anaconda packages, type `conda activate aero`. This should make (aero) show up before you username.  
+3. For example, run PPO using the spacecraft-docking-continuous-v0 environment for 10 epochs:  
+`python aerospacerl/RL/PPO.py --epochs 10`
