@@ -8,7 +8,7 @@ Links to paper?? Or baseline results??
 1. Install Anaconda (Recommended):  
 Follow the installation instructions for Anaconda 3 [here](https://docs.continuum.io/anaconda/install/).  
 2. Create a conda Python 3.6 environment, which will help organize the packages used:  
-`conda create -n aero python=3.6`  
+`conda create -n aero python=3.7`  
 3. To use Python in this environment, activate it by running:  
 `conda activate aero`  
 4. Install OpenMPI (Ubuntu/Debian):  
