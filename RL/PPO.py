@@ -225,8 +225,8 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 
 		LoadPath (str): Path for custom neural network data file
 
-		RTA_type (str): RTA framework, either 'CBF', 'Velocity', 'IASIF', or
-			'ISimplex'
+		RTA_type (str): RTA framework, either 'CBF', 'SVL', 'ASIF', or
+			'SBSF'
 
 	"""
 
@@ -338,11 +338,11 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 	# Import RTA
 	if RTA_type == 'CBF':
 		from CBF_for_speed_limit import RTA
-	elif RTA_type == 'Velocity':
+	elif RTA_type == 'SVL':
 		from Simple_velocity_limit import RTA
-	elif RTA_type == 'IASIF':
+	elif RTA_type == 'ASIF':
 		from IASIF import RTA
-	elif RTA_type == 'ISimplex':
+	elif RTA_type == 'SBSF':
 		from ISimplex import RTA
 
 	# Call RTA, define action conversion
@@ -357,7 +357,7 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 			u_des = np.array([[act[0]], [act[1]], [0]])
 			u = rta.main(x0, u_des)
 			new_act = [u[0,0], u[1,0]]
-			if abs(np.sqrt(new_act[0]**2+new_act[1]**2) - np.sqrt(act[0]**2+act[1]**2)) < 0.0001:
+			if np.sqrt((act[0] - new_act[0])**2 + (act[1] - new_act[1])**2) < 0.0001:
 				env.RTA_on = False
 			else:
 				env.RTA_on = True
@@ -549,7 +549,7 @@ if __name__ == '__main__':
 	parser.add_argument('--LoadLatest', default=False, action='store_true') # Load NN - Add arg '--LoadLatest' to load last saved model
 	parser.add_argument('--LoadCustom', default=False, action='store_true') # Load NN - Add arg '--LoadCustom' to load previous model (update path using --custom_model)
 	parser.add_argument('--custom_model', type=str, default='Velocity1') # Custom NN model, from 'saved_models' folder
-	parser.add_argument('--RTA', type=str, default='off') # Run Time Assurance - 4 options: 'CBF', 'Velocity', 'IASIF', or 'ISimplex'
+	parser.add_argument('--RTA', type=str, default='off') # Run Time Assurance - 4 options: 'CBF', 'SVL', 'ASIF', or 'SBSF'
 	args = parser.parse_args()
 
 	mpi_fork(args.cpu)  # run parallel code with mpi
@@ -578,6 +578,6 @@ tensorboard --logdir aerospacerl/RL/runs
 '''
 
 '''
-Example of how to run PPO in terminal from home directory, using Velocity RTA for 10 epochs:
-python aerospacerl/RL/PPO.py --RTA Velocity --epochs 10
+Example of how to run PPO in terminal from home directory, using SVL RTA for 10 epochs:
+python aerospacerl/RL/PPO.py --RTA SVL --epochs 10
 '''

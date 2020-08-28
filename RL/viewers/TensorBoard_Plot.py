@@ -101,7 +101,8 @@ def main(FILE=['NoRTA1'], plots=['Delta-V'], cutoff=2000, smooth=11):
 			sns.tsplot(data=x4, color='y')
 		if len(x5) != 0:
 			sns.tsplot(data=x5, color='m')
-		plt.xlabel('Epoch')
+		plt.xlabel('Environment Interactions (10e6)')
+		plt.xticks([0, 500, 1000, 1500, 2000],[0, 15, 30, 45, 60])
 		plt.ylabel(ylabel)
 		plt.grid(True)
 		# plt.title(title)
@@ -110,10 +111,10 @@ def main(FILE=['NoRTA1'], plots=['Delta-V'], cutoff=2000, smooth=11):
 	plt.figure(fig+1)
 	plt.plot(0,0,color='r', linewidth=2)
 	plt.plot(0,0,color='b', linewidth=2)
-	plt.plot(0,0,color='y', linewidth=2)
+	plt.plot(0,0,color='lime', linewidth=2)
 	plt.plot(0,0,color='m', linewidth=2)
 	plt.axis('off')
-	plt.legend(['Training with No RTA','Training with Velocity Limit','Training with Simplex','Training with ASIF'], loc='upper center')
+	plt.legend(['Training with No RTA','Training with SVL','Training with SBSF','Training with ASIF'], loc='upper center')
 
 	plt.show()
 

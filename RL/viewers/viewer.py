@@ -130,11 +130,11 @@ def view(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], epis
 		# Set RTA
 		if RTA_type == 'CBF':
 			from CBF_for_speed_limit import RTA
-		elif RTA_type == 'Velocity':
+		elif RTA_type == 'SVL':
 			from Simple_velocity_limit import RTA
-		elif RTA_type == 'IASIF':
+		elif RTA_type == 'ASIF':
 			from IASIF import RTA
-		elif RTA_type == 'ISimplex':
+		elif RTA_type == 'SBSF':
 			from ISimplex import RTA
 
 		# Initialize RTA variables if on
@@ -148,7 +148,7 @@ def view(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], epis
 				u_des = np.array([[act[0]], [act[1]], [0]])
 				u = rta.main(x0, u_des)
 				new_act = [u[0,0], u[1,0]]
-				if abs(np.sqrt(new_act[0]**2+new_act[1]**2) - np.sqrt(act[0]**2+act[1]**2)) < 0.0001:
+				if np.sqrt((act[0] - new_act[0])**2 + (act[1] - new_act[1])**2) < 0.0001:
 					env.RTA_on = False
 				else:
 					env.RTA_on = True
@@ -232,11 +232,11 @@ def plot(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], epis
 		# Set RTA
 		if RTA_type == 'CBF':
 			from CBF_for_speed_limit import RTA
-		elif RTA_type == 'Velocity':
+		elif RTA_type == 'SVL':
 			from Simple_velocity_limit import RTA
-		elif RTA_type == 'IASIF':
+		elif RTA_type == 'ASIF':
 			from IASIF import RTA
-		elif RTA_type == 'ISimplex':
+		elif RTA_type == 'SBSF':
 			from ISimplex import RTA
 
 		# Initialize RTA variables if on
@@ -250,7 +250,7 @@ def plot(env_name='spacecraft-docking-continuous-v0', hidden_sizes=[64,64], epis
 				u_des = np.array([[act[0]], [act[1]], [0]])
 				u = rta.main(x0, u_des)
 				new_act = [u[0,0], u[1,0]]
-				if abs(np.sqrt(new_act[0]**2+new_act[1]**2) - np.sqrt(act[0]**2+act[1]**2)) < 0.0001:
+				if np.sqrt((act[0] - new_act[0])**2 + (act[1] - new_act[1])**2) < 0.0001:
 					env.RTA_on = False
 				else:
 					env.RTA_on = True
@@ -381,7 +381,7 @@ if __name__ == '__main__':
 	parser.add_argument('--LoadLatest', default=False, action='store_true') # Load NN - Add arg '--LoadLatest' to load last saved model instead of custom model
 	parser.add_argument('--hid', type=int, default=64) # Number of hidden layer nodes
 	parser.add_argument('--l', type=int, default=2) # Number of hidden layers
-	parser.add_argument('--RTA', type=str, default='off') # Run Time Assurance - 4 options: 'CBF', 'Velocity', 'IASIF', or 'ISimplex'
+	parser.add_argument('--RTA', type=str, default='off') # Run Time Assurance - 4 options: 'CBF', 'SVL', 'ASIF', or 'SBSF'
 	parser.add_argument('--render_every', type=int, default=4) # Render every _ steps
 	parser.add_argument('--PlotTypes', nargs='+', default=['position','vel_pos','velocity','force']) # Which plots to show
 	parser.add_argument('--model', type=str, default='Velocity1') # Model from 'saved_models' folder
