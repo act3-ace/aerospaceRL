@@ -41,7 +41,7 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 	NoRTA_model = "NoRTA1.dat"
 	SVL_model = "Velocity1.dat"
 	SBSF_model = "ISimplex1.dat"
-	ASIF_model = "IASIF1.dat"
+	ASIF_model = "IASIF2.dat"
 	#####################
 
 	env = gym.make('spacecraft-docking-continuous-v0')
