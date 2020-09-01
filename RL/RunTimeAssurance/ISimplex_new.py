@@ -3,31 +3,27 @@
 """
 @author: Mark Mote (marklmote@gmail.com)
 
-A template for creating RTA filters, passes desired input through unaltered
+A template for creating RTA filters, passes desired input through unaltered 
 
-The main loop will call the RTA's "main" class and expect
-a control signal of appropriate size and type to be returned
+The main loop will call the ASIF's "main" class and expect 
+a control signal of appropriate size and type to be returned 
 
-In order for this script to work correctly with the main script, avoid
-changing the name of the "RTA" class, or the inputs and outputs of
-the "main" function.
+In order for this script to work correctly with the main script, avoid 
+changing the name of the "ASIF" class, or the inputs and outputs of 
+the "main" function.  
 
 """
 
-import numpy as np
+import numpy as np 
+import os, sys, inspect
+sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))) # add parent directory to path  
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utilities')) # add utilities to path 
+from parameters import SystemParameters 
 
-class RTA():
-    def __init__(self, env):
-        self.mass_chaser = env.mass_deputy
-        self.mean_motion = env.n
-        self.max_available_thrust = env.force_magnitude
-        self.controller_sample_period = env.tau
-        self.controller_sample_rate = 1 / self.controller_sample_period
-        self.filter_sample_period = env.tau
-        self.filter_sample_rate = 1 / self.filter_sample_period
-        
+class ASIF(SystemParameters): 
+    def __init__(self):
         self.zero_input = np.zeros([3,1])
-
+        
         # Define Backup controller parameters 
         self.T_backup = 750 #  2100 # [s] length of time in backup trajectory horizon 
         self.Nsteps = 500 #    # number steps in horizon of backup trajectory 

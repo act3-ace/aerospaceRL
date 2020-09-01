@@ -540,7 +540,7 @@ if __name__ == '__main__':
 	parser.add_argument('--gamma', type=float, default=0.99) # Discount factor
 	parser.add_argument('--seed', '-s', type=int, default=0) # Seed for randomization
 	parser.add_argument('--cpu', type=int, default=len(os.sched_getaffinity(0))) # Number of CPU cores (default is use all available)
-	parser.add_argument('--steps', type=int, default=3000) # Steps per epoch (Defaults to enough to run at least one episode per core)
+	parser.add_argument('--steps', type=int, default=21500) # Steps per epoch (Defaults to enough to run at least one episode per core)
 	parser.add_argument('--epochs', type=int, default=5000) # Number of epochs
 	parser.add_argument('--exp_name', type=str, default='ppo') # Algorithm name (for logger)
 	parser.add_argument('--NoTB', default=True, action='store_false') # Log to TnesorBoard - Add arg '--NoTB' if you don't want to log to TensorBoard
