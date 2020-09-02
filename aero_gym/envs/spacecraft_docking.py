@@ -77,7 +77,7 @@ class SpacecraftDocking(gym.Env):
 		self.position_deputy = 1000 # m (Relative distance from chief)
 		self.mass_deputy = 12 # kg
 		self.n = 0.001027 # rad/sec (mean motion)
-		self.tau = 2 # sec (time step)
+		self.tau = 1 # sec (time step)
 		self.integrator = 'Euler' # Either 'Quad', 'RK45', or 'Euler' (default)
 		self.force_magnitude = 1 # Newtons
 		self.x_threshold = 1.5 * self.position_deputy # m (In either direction)
@@ -281,7 +281,7 @@ class SpacecraftDocking(gym.Env):
 
 		# Rewards
 		if not done:
-			reward = min((-1+rH_old-self.rH)/2000, -0.00005) * self.tau  # Negative reward for getting closer/further
+			reward = (-1+rH_old-self.rH)/2000 * self.tau #min((-1+rH_old-self.rH)/2000, -0.00005) * self.tau  # Negative reward for getting closer/further
 
 			if self.vH < self.vH_min:
 				reward += -0.0075*abs(self.vH-self.vH_min) * self.tau # Negative reward for being below min velocity

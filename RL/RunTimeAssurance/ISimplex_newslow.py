@@ -3,54 +3,43 @@
 """
 @author: Mark Mote (marklmote@gmail.com)
 
-A template for creating RTA filters, passes desired input through unaltered 
+A template for creating RTA filters, passes desired input through unaltered
 
-The main loop will call the ASIF's "main" class and expect 
-a control signal of appropriate size and type to be returned 
+The main loop will call the RTA's "main" class and expect
+a control signal of appropriate size and type to be returned
 
-In order for this script to work correctly with the main script, avoid 
-changing the name of the "ASIF" class, or the inputs and outputs of 
-the "main" function.  
+In order for this script to work correctly with the main script, avoid
+changing the name of the "RTA" class, or the inputs and outputs of
+the "main" function.
 
 """
 
-import numpy as np 
-#import os, sys, inspect
-#sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))) # add parent directory to path  
-#sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utilities')) # add utilities to path 
-#from parameters import SystemParameters 
+import numpy as np
 
-class RTA():#SystemParameters): 
-    def __init__(self):
+class RTA():
+    def __init__(self, env):
         self.mass_chaser = env.mass_deputy
         self.mean_motion = env.n
         self.max_available_thrust = env.force_magnitude
         self.controller_sample_period = env.tau
         self.controller_sample_rate = 1 / self.controller_sample_period
         self.filter_sample_period = env.tau
-        self.filter_sample_rate = 1 / self.filter_sample_period        
+        self.filter_sample_rate = 1 / self.filter_sample_period
+        
         self.zero_input = np.zeros([3,1])
-        
-        self.f_lite_version = True # Drops the endpoint constraint and shortens the horizon
-        
-        if self.f_lite_version: 
-            # Define Backup controller parameters for "lite" version 
-            self.T_backup = 5 #  2100 # [s] length of time in backup trajectory horizon 
-            self.Nsteps = 5 #    # number steps in horizon of backup trajectory 
-            self.kappa = .6     # higher values of this make actuation stonger  
-        else:
-            # Define Backup controller parameters 
-            self.T_backup = 750 #  2100 # [s] length of time in backup trajectory horizon 
-            self.Nsteps = 500 #    # number steps in horizon of backup trajectory 
-            self.kappa = .6     # higher values of this make actuation stonger  
+
+        # Define Backup controller parameters 
+        self.T_backup = 750 #  2100 # [s] length of time in backup trajectory horizon 
+        self.Nsteps = 500 #    # number steps in horizon of backup trajectory 
+        self.kappa = .6     # higher values of this make actuation stonger  
         
         # Define safety set and backup set parameters 
         self.eta_b = .1   # acceptable error magnitude from NMT plane for reachability constraint
         self.K1_s = 2.0*self.mean_motion # slope of safety boundary for speed limit constraint (must be >= 2n)
-        self.K2_s = 0.19 # 0.97*0.2  # 2*self.eta_b # max allowable speed at origin (must be > eta_b)
+        self.K2_s = 0.97*0.2  # 2*self.eta_b # max allowable speed at origin (must be > eta_b)
         
         # # Other 
-        self.dt_first_step = 1
+        # self.dt_first_step = 1
         
         self.timevec = np.linspace(0, self.T_backup, self.Nsteps)
         self.dt = self.timevec[1]-self.timevec[0]
@@ -91,17 +80,16 @@ class RTA():#SystemParameters):
         x0 = np.array([x0[0], x0[1], x0[3], x0[4]])
         
         # Take one step under "u_des" 
-        x1 = x0 + self.xdot(x0, u_des[0:2,0])*self.dt_first_step
+        x1 = x0 + self.xdot(x0, u_des[0:2,0])*self.dt
         
         # Integrate trajectory from x1
         self.integrate(x1)
         
         udes_safe = True 
         
-        if not self.f_lite_version: 
-            # Backwards Reachability 
-            if self.h_b(self.phi[:,-1]) < 0: 
-                udes_safe = False 
+        # Backwards Reachability 
+        if self.h_b(self.phi[:,-1]) < 0: 
+            udes_safe = False 
             
         # Invariance
         for i in range(0,self.Nsteps):     
@@ -124,7 +112,7 @@ class RTA():#SystemParameters):
         
         """
         r2 = x[0]**2 + x[1]**2
-        return self.K2_s**2 + (self.K1_s**2)*(r2) + 2*self.K1_s*self.K2_s*np.sqrt(r2) - (x[2]**2 + x[3]**2) 
+        return self.K2_s**2 + (self.K1_s**2)*(r2) + self.K1_s*self.K2_s*np.sqrt(r2) - (x[2]**2 + x[3]**2) 
 
     # ##########################################################################        
     def grad_hs(self, x):
@@ -141,13 +129,13 @@ class RTA():#SystemParameters):
         h_b(x) >= 0 defines the "terminal set".
         
         """
-        # sx = 
-        # sy = 
-        # vx = 
-        # vy = x[3]
-        # n = self.mean_motion
+        sx = x[0]
+        sy = x[1]
+        vx = x[2]
+        vy = x[3]
+        n = self.mean_motion
         
-        return self.eta_b**2 - x[2]**2 - x[3]**2 - 4*(self.mean_motion**2)*x[0]**2 - 0.25*(self.mean_motion**2)*x[1]**2 - 4*self.mean_motion*x[0]*x[3] + self.mean_motion*x[1]*x[2]
+        return self.eta_b**2 - vx**2 - vy**2 - 4*(n**2)*sx**2 - 0.25*(n**2)*sy**2 - 4*n*sx*vy + n*sy*vx 
     
     ##########################################################################        
     def grad_hb(self, x):
