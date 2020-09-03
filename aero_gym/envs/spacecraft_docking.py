@@ -84,7 +84,7 @@ class SpacecraftDocking(gym.Env):
 		self.y_threshold = 1.5 * self.position_deputy # m (In either direction)
 		self.pos_threshold = 0.1 # m (|x| and |y| must be less than this to dock)
 		self.vel_threshold = 0.2 # m/s (Relative velocity must be less than this to dock)
-		self.max_time = 3500 # seconds
+		self.max_time = 4000 # seconds
 		self.max_control = 2500 # Newtons
 		self.init_velocity = (self.position_deputy + 625) / 1125 # m/s (+/- x and y)
 		self.RTA_reward = 'NoRTA' # Changes reward for different RTA, either 'NoRTA', 'CBF', 'SVL', 'ASIF', or 'SBSF'
