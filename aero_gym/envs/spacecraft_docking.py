@@ -295,21 +295,32 @@ class SpacecraftDocking(gym.Env):
 			if self.vH < 2*self.vel_threshold and (self.RTA_on or self.vH < self.vH_min or self.vH > self.vH_max):
 				if self.RTA_reward == 'NoRTA':
 					reward += -0.0075/2  * self.tau # Larger negative reward if violating constraint close to docking
-				elif self.RTA_reward == 'SVL' or self.RTA_reward == 'SBSF':
-					reward += -0.005/2  * self.tau # Larger negative reward if violating constraint close to docking
-				else: #ASIF Case -can possibly remove if ASIF is edited
-					if self.vH < 0.01:
-						reward += -0.001/2  * self.tau # Negative reward if velocity is zero
+
+				# elif self.RTA_reward == 'SVL' or self.RTA_reward == 'SBSF':
+				# 	reward += -0.005/2  * self.tau # Larger negative reward if violating constraint close to docking
+				# else: #ASIF Case -can possibly remove if ASIF is edited
+				# 	if self.vH < 0.01:
+				# 		reward += -0.001/2  * self.tau # Negative reward if velocity is zero
+
+				else: # Try this for ASIF. If it doesn't work, go back to previous rewards
+					reward += -0.005/2  * self.tau
 
 		elif abs(x) <= self.pos_threshold and abs(y) <= self.pos_threshold:
-			if self.RTA_reward == 'NoRTA' or self.RTA_reward == 'SVL' or self.RTA_reward == 'SBSF': #this can be removed if ASIF fixed (but keep if else that is nested)
-				if self.vH > self.vel_threshold:
-					reward = -0.001 # Negative reward for crashing
-					self.crash += 1 # Track crash
-				else:
-					reward = 1 # +1 for docking
-					self.success += 1 # Track success
-			else: # can be removed if ASIF is fixed
+			# if self.RTA_reward == 'NoRTA' or self.RTA_reward == 'SVL' or self.RTA_reward == 'SBSF': #this can be removed if ASIF fixed (but keep if else that is nested)
+			# 	if self.vH > self.vel_threshold:
+			# 		reward = -0.001 # Negative reward for crashing
+			# 		self.crash += 1 # Track crash
+			# 	else:
+			# 		reward = 1 # +1 for docking
+			# 		self.success += 1 # Track success
+			# else: # can be removed if ASIF is fixed
+			# 	reward = 1 # +1 for docking
+			# 	self.success += 1 # Track success
+
+			if self.vH > self.vel_threshold: # Try this for ASIF. If it doesn't work, go back to previous rewards
+				reward = -0.001 # Negative reward for crashing
+				self.crash += 1 # Track crash
+			else:
 				reward = 1 # +1 for docking
 				self.success += 1 # Track success
 
