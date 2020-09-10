@@ -449,6 +449,7 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 			failure_rate = 0
 			crash_rate = 0
 			overtime_rate = 0
+			raise ("No completed episodes logging will break [increase steps per epoch]")
 
 		# Save model
 		if (epoch % save_freq == 0) or (epoch == epochs-1):
