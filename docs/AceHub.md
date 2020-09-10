@@ -54,3 +54,7 @@ User must be logged into act3 VPN
     - When `PENDING` changes to `READY` click on environment name (this will should more info)
     - Select OPEN UI (this will open a brower link with vs code server)
 4. To view tensorboard copy the vs code user and change then end of the url from `0-8888` to `0-6006`
+
+## Running PPO
+1. Running on acehub requires xvfb to avoid opengl errors. Please use the following
+    -xvfb-run -s "-screen 0 1400x920x24" python PPO.py --steps=48500  --cpu=12
