@@ -14,24 +14,30 @@ the "main" function.
 
 """
 
-import numpy as np 
-import os, sys, inspect
-sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))) # add parent directory to path  
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utilities')) # add utilities to path 
-from parameters import SystemParameters 
-import gurobipy as gp 
-from gurobipy import GRB
+import numpy as np
+#import os, sys, inspect
+#sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))) # add parent directory to path
+#sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utilities')) # add utilities to path 
+#from parameters import SystemParameters
 
-class RTA(SystemParameters): 
-    def __init__(self):
-        self.zero_input = np.zeros([3,1])
-
+class RTA():#SystemParameters):
+    def __init__(self, env):
         ########################## Set Parameters #############################
         # Flags 
         self.f_use_heuristic = False # Apply heuristic that will speed up computation (but weaken the safety guaruntees) 
         self.f_endpoint_constraint = True # Require that trajectory endpoint lie in invariant set 
         self.f_soften_constraint = False # Allows violation of barrier constraint
         self.f_use_ub_for_violations = True # If the state is outside of the safe set, then backup controller is used  
+        
+        self.mass_chaser = env.mass_deputy
+        self.mean_motion = env.n
+        self.max_available_thrust = env.force_magnitude
+        self.controller_sample_period = env.tau
+        self.controller_sample_rate = 1 / self.controller_sample_period
+        self.filter_sample_period = env.tau
+        self.filter_sample_rate = 1 / self.filter_sample_period
+        self.zero_input = np.zeros([3,1])
+
         self.f_lite_version = True # Drops the endpoint constraint and shortens the horizon
 
         if self.f_lite_version: 
