@@ -38,14 +38,13 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 	"""
 
 	##### NN MODELS #####
-	NoRTA_model = "NoRTA1.dat"
-	SVL_model = "Velocity1.dat"
-	SBSF_model = "ISimplex1.dat"
+	NoRTA_model = "NoRTA2.dat"
+	SVL_model = "Velocity2.dat"
+	SBSF_model = "ISimplex2.dat"
 	ASIF_model = "IASIF2.dat"
 	#####################
 
 	env = gym.make('spacecraft-docking-continuous-v0')
-	env.tau = 1 # Change to 1 sec time step
 
 	# Defines test points
 	if RANGE == 10000:

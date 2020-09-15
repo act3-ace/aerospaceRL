@@ -158,9 +158,6 @@ class SpacecraftDocking(gym.Env):
 		self.steps = -1 # Step counter
 		self.control_input = 0 # Used to sum total control input for an episode
 
-		if self.RTA_reward == 'CBF' or self.RTA_reward == 'ASIF' or self.RTA_reward == 'SBSF':
-			self.max_time = 4000 # seconds
-
 		# Use random angle to calculate x and y position
 		theta = self.np_random.uniform(low=0, high=2*math.pi) # random angle, starts 10km away
 		self.x_deputy = self.position_deputy*math.cos(theta) # m
@@ -286,20 +283,17 @@ class SpacecraftDocking(gym.Env):
 			if self.vH < self.vH_min:
 				reward += -0.0075*abs(self.vH-self.vH_min) * self.tau # Negative reward for being below min velocity
 
-			if self.RTA_reward == 'NoRTA' and self.vH > self.vH_max:
-				reward += -0.0035*abs(self.vH-self.vH_max) * self.tau # Negative reward for being over max velocity
-
-			if self.RTA_on:
-				reward += -0.001 * self.tau # Negative reward if RTA is on
+			if self.RTA_on or self.vH > self.vH_max:
+				if self.RTA_reward == 'NoRTA':
+					reward += -0.0035*abs(self.vH-self.vH_max) * self.tau # Negative reward for being over max velocity
+				else:
+					reward += -0.001 * self.tau # Negative reward if RTA is on
 
 			if self.vH < 2*self.vel_threshold and (self.RTA_on or self.vH < self.vH_min or self.vH > self.vH_max):
 				if self.RTA_reward == 'NoRTA':
 					reward += -0.0075/2  * self.tau # Larger negative reward if violating constraint close to docking
-				elif self.RTA_reward == 'SVL' or self.RTA_reward == 'SBSF':
+				else:
 					reward += -0.005/2  * self.tau # Larger negative reward if violating constraint close to docking
-				else: #ASIF Case
-					if self.vH < 0.01:
-						reward += -0.001/2  * self.tau # Negative reward if velocity is zero
 
 		elif abs(x) <= self.pos_threshold and abs(y) <= self.pos_threshold:
 			if self.vH > self.vel_threshold:
