@@ -193,17 +193,14 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 	plt.plot([0, 10000],[-0.2, 4.935], '--', color='coral',label='Min Velocity Limit')
 	# plt.title('Velocity vs. Position')
 	if RANGE == 1000:
-		if Test == 'NoRTA':
-			plt.ylim([0, 5])
-		else:
-			plt.ylim([0, 2.5])
+		plt.ylim([0, 2.5])
 		plt.xlim([0, 1200])
 	elif RANGE == 10000:
 		plt.xlim([0, 10000])
 		plt.ylim([0, 20])
 	plt.xlabel('Distance from Chief (m)')
 	plt.ylabel('Relative Velocity (m/s)')
-	plt.legend()
+	# plt.legend()
 	plt.grid(True)
 
 	plt.figure(2)
@@ -218,6 +215,17 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 	plt.grid(True)
 	plt.xlabel('X position (m)')
 	plt.ylabel('Y position (m)')
+
+	plt.figure(3)
+	plt.plot(0,0,color='r', linewidth=2)
+	plt.plot(0,0,color='darkorange', linewidth=2)
+	plt.plot(0,0,color='b', linewidth=2)
+	plt.plot(0,0,color='lime', linewidth=2)
+	plt.plot(0,0,color='m', linewidth=2)
+	plt.plot(0,0,'--',color='black')
+	plt.plot(0,0,'--',color='coral')
+	plt.axis('off')
+	plt.legend(['Training with No RTA - HP','Training with No RTA','Training with SVL','Training with SBSF','Training with ASIF','Max Velocity Limit','Min Velocity Limit'], loc='upper center')
 
 	plt.show()
 
