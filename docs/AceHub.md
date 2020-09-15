@@ -10,7 +10,7 @@ User must be logged into act3 VPN
     - Select access tokens from tree view on the left
     - Create a new access token with all permissions
     - Save token for use on ACEHub 
-2. Setup AceHub Profile: https://ace-hub.lynx.act3-ace.ai
+2. Setup AceHub Profile: https://ace-hub.lynx.act3-ace.ai (must be connected to ACT3 VPN)
     -	Login using AD (GitLab) credentials
     - Enter your profile by selecting user name at the top of screen (https://ace-hub.lynx.act3-ace.ai/profile)
     - In the Environment Variables section select the plus sign to add a varaibles
