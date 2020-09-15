@@ -56,6 +56,7 @@ def main(FILE=['NoRTA1'], plots=['Delta-V'], cutoff=2000, smooth=11):
 		x3 = []
 		x4 = []
 		x5 = []
+		x6 = []
 
 		# Cycles through TB runs
 		for file in FILE:
@@ -81,14 +82,16 @@ def main(FILE=['NoRTA1'], plots=['Delta-V'], cutoff=2000, smooth=11):
 			x = np.convolve(x,np.ones(smooth),'same')/ np.convolve(np.ones(len(x)),np.ones(smooth),'same')
 
 			# Append to proper training file
-			if file == 'NoRTA1' or file == 'NoRTA2':
+			if file == 'NoRTAHP1' or file == 'NoRTAHP2':
 				x2.append(x)
-			elif file == 'Velocity1' or file == 'Velocity2':
+			elif file == 'NoRTA1' or file == 'NoRTA2':
 				x3.append(x)
-			elif file == 'ISimplex1' or file == 'ISimplex2':
+			elif file == 'Velocity1' or file == 'Velocity2':
 				x4.append(x)
-			elif file == 'IASIF1' or file == 'IASIF2':
+			elif file == 'ISimplex1' or file == 'ISimplex2':
 				x5.append(x)
+			elif file == 'IASIF1' or file == 'IASIF2':
+				x6.append(x)
 
 
 		# Plot results
@@ -96,13 +99,15 @@ def main(FILE=['NoRTA1'], plots=['Delta-V'], cutoff=2000, smooth=11):
 		if len(x2) != 0:
 			sns.tsplot(data=x2, color='r')
 		if len(x3) != 0:
-			sns.tsplot(data=x3, color='b')
+			sns.tsplot(data=x3, color='darkorange')
 		if len(x4) != 0:
-			sns.tsplot(data=x4, color='y')
+			sns.tsplot(data=x4, color='b')
 		if len(x5) != 0:
-			sns.tsplot(data=x5, color='m')
+			sns.tsplot(data=x5, color='lime')
+		if len(x6) != 0:
+			sns.tsplot(data=x6, color='m')
 		plt.xlabel('Environment Interactions (10e6)')
-		plt.xticks([0, 500, 1000, 1500, 2000],[0, 15, 30, 45, 60])
+		plt.xticks([0, 345, 690, 1035, 1380, 1725, 2070],[0, 15, 30, 45, 60, 75, 90])
 		plt.ylabel(ylabel)
 		plt.grid(True)
 		# plt.title(title)
@@ -110,18 +115,19 @@ def main(FILE=['NoRTA1'], plots=['Delta-V'], cutoff=2000, smooth=11):
 	# Plot legend separately
 	plt.figure(fig+1)
 	plt.plot(0,0,color='r', linewidth=2)
+	plt.plot(0,0,color='darkorange', linewidth=2)
 	plt.plot(0,0,color='b', linewidth=2)
 	plt.plot(0,0,color='lime', linewidth=2)
 	plt.plot(0,0,color='m', linewidth=2)
 	plt.axis('off')
-	plt.legend(['Training with No RTA','Training with SVL','Training with SBSF','Training with ASIF'], loc='upper center')
+	plt.legend(['Training with No RTA - HP','Training with No RTA','Training with SVL','Training with SBSF','Training with ASIF'], loc='upper center')
 
 	plt.show()
 
 if __name__ == '__main__':
 	import argparse
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--Files', nargs='+', default=['NoRTA1','NoRTA2','Velocity1','Velocity2','IASIF1','IASIF2','ISimplex1','ISimplex2']) # TB files to use
+	parser.add_argument('--Files', nargs='+', default=['NoRTAHP1','NoRTAHP2','NoRTA1','NoRTA2','Velocity1','Velocity2','IASIF1','IASIF2','ISimplex1','ISimplex2']) # TB files to use
 	parser.add_argument('--Plots', nargs='+', default=['Delta-V','Episode-Length','RTA-on-percent','Return','Success-Rate']) # TB plots to display
 	parser.add_argument('--cutoff', type=int, default=2000) # Number of epochs to display
 	parser.add_argument('--smooth', type=int, default=11) # Number of episodes to smooth over

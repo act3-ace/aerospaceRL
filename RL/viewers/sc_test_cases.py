@@ -29,7 +29,7 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 	Test: Test Case
 		'NoRTA', 'SVL', 'SBSF', or 'ASIF'
 	Train: Training Case
-		'NoRTA', 'SVL', 'SBSF', or 'ASIF'
+		'NoRTA', 'NoRTAHP', 'SVL', 'SBSF', or 'ASIF'
 	RANGE: Test Range (m)
 		1000 or 10000
 	ac_kwargs: Neural network parameters
@@ -39,6 +39,7 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 
 	##### NN MODELS #####
 	NoRTA_model = "NoRTA2.dat"
+	NoRTAHP_model = "NoRTAHP2.dat"
 	SVL_model = "Velocity2.dat"
 	SBSF_model = "ISimplex2.dat"
 	ASIF_model = "IASIF2.dat"
@@ -95,6 +96,8 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 		# Load appropriate model
 		if Train == 'NoRTA':
 			ac.load_state_dict(torch.load(f"{PATH}/{NoRTA_model}"))
+		elif Train == 'NoRTAHP':
+			ac.load_state_dict(torch.load(f"{PATH}/{NoRTAHP_model}"))
 		elif Train == 'SVL':
 			ac.load_state_dict(torch.load(f"{PATH}/{SVL_model}"))
 		elif Train == 'SBSF':
@@ -136,8 +139,8 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 			obs = env.state
 			env.x_threshold = 1.5 * env.position_deputy
 			env.y_threshold = 1.5 * env.position_deputy
-			env.max_time = 10000
-			env.max_control = 10000
+			if RANGE == 1000 and Test != 'SBSF':
+				env.max_control = 750
 
 			# Run episode
 			while not done:
@@ -167,8 +170,10 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 
 			# Plot trajectories
 			plt.figure(1)
-			if Train == 'NoRTA':
+			if Train == 'NoRTAHP':
 				dash = 'r'
+			elif Train == 'NoRTA':
+				dash = 'darkorange'
 			elif Train == 'SVL':
 				dash = 'b'
 			elif Train == 'SBSF':
@@ -180,7 +185,7 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 			plt.plot(x,y,dash)
 
 		# Print RTA on percentage
-		print(f"Average RTA % On: {RTA_percent/steps*100:.1f} %")
+		print(f"{Train} Average RTA % On: {RTA_percent/steps*100:.1f} %")
 
 	# Plot setup
 	plt.figure(1)
@@ -188,8 +193,11 @@ def main(Test='NoRTA', TrainingCases=['NoRTA'], RANGE=1000, ac_kwargs=dict(hidde
 	plt.plot([0, 10000],[-0.2, 4.935], '--', color='coral',label='Min Velocity Limit')
 	# plt.title('Velocity vs. Position')
 	if RANGE == 1000:
+		if Test == 'NoRTA':
+			plt.ylim([0, 5])
+		else:
+			plt.ylim([0, 2.5])
 		plt.xlim([0, 1200])
-		plt.ylim([0, 2.5])
 	elif RANGE == 10000:
 		plt.xlim([0, 10000])
 		plt.ylim([0, 20])
@@ -217,7 +225,7 @@ if __name__ == '__main__':
 	import argparse
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--test', type=str, default='NoRTA') # Test Case: 'NoRTA', 'SVL', 'SBSF', or 'ASIF'
-	parser.add_argument('--train', nargs='+', default=['NoRTA','SVL','SBSF','ASIF']) # Training Case: 'NoRTA', 'SVL', 'SBSF', or 'ASIF'
+	parser.add_argument('--train', nargs='+', default=['NoRTA','ASIF','NoRTAHP','SVL','SBSF']) # Training Case: 'NoRTA', 'NoRTAHP', 'SVL', 'SBSF', or 'ASIF'
 	parser.add_argument('--range', type=int, default=1000) # Test Range: 1000 or 10000
 	parser.add_argument('--hid', type=int, default=64) # Hidden layer nodes
 	parser.add_argument('--l', type=int, default=2) # Number of hidden layers
