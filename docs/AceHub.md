@@ -40,11 +40,12 @@ User must be logged into act3 VPN
       - All Resource selected as desired
     - In the Environment Variable Section select + 
        - Set Key to FIXUID
-       - Set Value to Act3 vpn userid (if unkown login to z-machine and run `id -u USERNAME`)
+       - Set Value to Act3 vpn userid (if unkown login to z-machine and run `id -u USERNAME` see [Getting UID](AceHub#getting-uid))
     - In the Environment Variable Section select + 
        - Set Key to FIXGID
-       - Set Value to Act3 vpn userid (if unkown login to z-machine and run `id -u USERNAME`)
+       - Set Value to Act3 vpn userid (if unkown login to z-machine and run `id -u USERNAME` see [Getting UID](AceHub#getting-uid))
     - Select Save As Template to store Environment Parameters for future use
+
 
 ## Launching AerospaceRL Environement
 1. Load Environment from the previous step
