@@ -58,3 +58,7 @@ User must be logged into act3 VPN
 ## Running PPO
 1. Running on acehub requires xvfb to avoid opengl errors. Please use the following
     -xvfb-run -s "-screen 0 1400x920x24" python PPO.py --steps=48500  --cpu=12
+
+## Getting UID
+1. `ssh z3.act3-ace.ai`
+2. `id -u USERNAME`
