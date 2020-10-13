@@ -16,6 +16,12 @@ User must be logged into act3 VPN
     - In the Environment Variables section select the plus sign to add a varaibles
       - Set the Key to GIT_PASSWORD
       - Set the Value to the token created in Step 1
+    - In the Environment Variable Section select + 
+       - Set Key to FIXUID
+       - Set Value to Act3 vpn userid (if unkown login to z-machine and run `id -u USERNAME` see [Getting UID](AceHub.md#getting-uid))
+    - In the Environment Variable Section select + 
+       - Set Key to FIXGID
+       - Set Value to 998
     - Save variables by selecting disc icon
     - In the Environment Files section select the plus sign to add a files
       - Set the Key to GIT_ASKPASS
@@ -38,12 +44,6 @@ User must be logged into act3 VPN
       - Name: to desired name (no space or symbols)
       - Image: reg.git.act3-ace.com/kyle.dunlap/aerospacerl:ace_hub
       - All Resource selected as desired
-    - In the Environment Variable Section select + 
-       - Set Key to FIXUID
-       - Set Value to Act3 vpn userid (if unkown login to z-machine and run `id -u USERNAME` see [Getting UID](AceHub.md#getting-uid))
-    - In the Environment Variable Section select + 
-       - Set Key to FIXGID
-       - Set Value to Act3 vpn userid (if unkown login to z-machine and run `id -u USERNAME` see [Getting UID](AceHub.md#getting-uid))
     - Select Save As Template to store Environment Parameters for future use
 
 
