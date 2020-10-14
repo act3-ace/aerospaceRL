@@ -1,8 +1,6 @@
-# Custom Environments
-Created by Kyle Dunlap and Kai Delsing  
+# Custom Aerospace Reinforcement Learning Environments
+Created by Kyle Dunlap, Kai Delsing, and Mark Mote
 Mentor: Kerianne Hobbs  
-
-Links to paper?? Or baseline results??
 
 
 ## Using Ace Hub
