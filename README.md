@@ -3,9 +3,6 @@ Created by Kyle Dunlap, Kai Delsing, and Mark Mote
 Mentor: Kerianne Hobbs  
 
 
-## Using Ace Hub
-To use ace hub for development follow [ACE HUB Readme](/docs/AceHub.md)
-
 ## Installation
 1. Install Anaconda (Recommended):  
 Follow the installation instructions for Anaconda 3 [here](https://docs.continuum.io/anaconda/install/).  
