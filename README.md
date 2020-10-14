@@ -1,6 +1,8 @@
 # Custom Aerospace Reinforcement Learning Environments
 Created by Kyle Dunlap, Kai Delsing, and Mark Mote
-Mentor: Kerianne Hobbs  
+Mentor: Kerianne Hobbs 
+
+Approved for public release: distribution unlimited. Case Number 88ABW-2020-2644.
 
 
 ## Installation
