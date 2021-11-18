@@ -225,8 +225,7 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 
 		LoadPath (str): Path for custom neural network data file
 
-		RTA_type (str): RTA framework, either 'CBF', 'SVL', 'ASIF', or
-			'SBSF'
+		RTA_type (str): RTA framework, either 'ExS', 'ImS', 'ExO', or 'ImO'
 
 	"""
 
@@ -335,15 +334,14 @@ def ppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 					 DeltaLossPi=(loss_pi.item() - pi_l_old),
 					 DeltaLossV=(loss_v.item() - v_l_old))
 
-	# Import RTA
-	if RTA_type == 'CBF':
-		from CBF_for_speed_limit import RTA
-	elif RTA_type == 'SVL':
-		from Simple_velocity_limit import RTA
-	elif RTA_type == 'ASIF':
-		from IASIF import RTA
-	elif RTA_type == 'SBSF':
-		from ISimplex import RTA
+	if RTA_type == 'ExS':
+		from Explicit_Switching import RTA
+	elif RTA_type == 'ImS':
+		from Implicit_Switching import RTA
+	elif RTA_type == 'ExO':
+		from Explicit_Optimization import RTA
+	elif RTA_type == 'ImO':
+		from Implicit_Optimization import RTA
 
 	# Call RTA, define action conversion
 	if RTA_type != 'off':
@@ -541,7 +539,7 @@ if __name__ == '__main__':
 	parser.add_argument('--gamma', type=float, default=0.99) # Discount factor
 	parser.add_argument('--seed', '-s', type=int, default=0) # Seed for randomization
 	parser.add_argument('--cpu', type=int, default=len(os.sched_getaffinity(0))) # Number of CPU cores (default is use all available)
-	parser.add_argument('--steps', type=int, default=43500) # Steps per epoch (Defaults to enough to run at least one episode per core)
+	parser.add_argument('--steps', type=int, default=85000) # Steps per epoch (Defaults to enough to run at least one episode per core)
 	parser.add_argument('--epochs', type=int, default=2000) # Number of epochs
 	parser.add_argument('--exp_name', type=str, default='ppo') # Algorithm name (for logger)
 	parser.add_argument('--NoTB', default=True, action='store_false') # Log to TnesorBoard - Add arg '--NoTB' if you don't want to log to TensorBoard
@@ -550,7 +548,7 @@ if __name__ == '__main__':
 	parser.add_argument('--LoadLatest', default=False, action='store_true') # Load NN - Add arg '--LoadLatest' to load last saved model
 	parser.add_argument('--LoadCustom', default=False, action='store_true') # Load NN - Add arg '--LoadCustom' to load previous model (update path using --custom_model)
 	parser.add_argument('--custom_model', type=str, default='Velocity1') # Custom NN model, from 'saved_models' folder
-	parser.add_argument('--RTA', type=str, default='off') # Run Time Assurance - 4 options: 'CBF', 'SVL', 'ASIF', or 'SBSF'
+	parser.add_argument('--RTA', type=str, default='off') # Run Time Assurance - 4 options: 'ExS', 'ImS', 'ExO', or 'ImO'
 	args = parser.parse_args()
 
 	mpi_fork(args.cpu)  # run parallel code with mpi
@@ -579,6 +577,6 @@ tensorboard --logdir aerospacerl/RL/runs
 '''
 
 '''
-Example of how to run PPO in terminal from home directory, using SVL RTA for 10 epochs:
-python aerospacerl/RL/PPO.py --RTA SVL --epochs 10
+Example of how to run PPO in terminal from home directory, using Explicit Switching RTA for 10 epochs:
+python aerospacerl/RL/PPO.py --RTA ExS --epochs 10
 '''

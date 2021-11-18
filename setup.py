@@ -11,6 +11,7 @@ setup(name='aero_gym',
 		'matplotlib',
 		'psutil',
 		'tqdm',
-		'seaborn==0.8.1'
+		'seaborn==0.8.1',
+		'quadprog==0.1.8'
 	]
 )

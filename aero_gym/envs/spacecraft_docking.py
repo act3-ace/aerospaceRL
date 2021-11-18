@@ -86,8 +86,8 @@ class SpacecraftDocking(gym.Env):
 		self.vel_threshold = 0.2 # m/s (Relative velocity must be less than this to dock)
 		self.max_time = 4000 # seconds
 		self.max_control = 2500 # Newtons
-		self.init_velocity = (self.position_deputy + 625) / 1125 # m/s (+/- x and y)
-		self.RTA_reward = 'NoRTA' # Changes reward for different RTA, either 'NoRTA', 'CBF', 'SVL', 'ASIF', or 'SBSF'
+		self.init_velocity = 1.5 # m/s (+/- x and y)
+		self.RTA_reward = 'NoRTA' # Changes reward for different RTA
 
 		#For Tensorboard Plots#
 		self.RTA_on = False # Flag for if RTA is on or not, used for rewards
